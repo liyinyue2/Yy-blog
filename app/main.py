@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.core.database import db
 from app.modules.auth.router import router as auth_router
+from app.modules.blog.router import router as blog_router
 
 
 @asynccontextmanager
@@ -47,6 +48,7 @@ async def security_headers(request: Request, call_next):
 
 
 app.include_router(auth_router)
+app.include_router(blog_router)
 
 
 @app.get("/api/health")

@@ -3,26 +3,56 @@
   const escapeHtml = value => String(value ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  let token = sessionStorage.getItem('admin-token') || '';
+  let access = sessionStorage.getItem('admin-access') || '';
+  let refresh = sessionStorage.getItem('admin-refresh') || '';
   let editingSlug = null;
   let editingCategory = null;
 
-  const api = (path, options = {}) => fetch(path, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token, ...(options.headers || {}) }
-  }).then(async res => ({ ok: res.ok, status: res.status, data: await res.json().catch(() => ({})) }));
-
-  /* ---------- 令牌 ---------- */
-  const gate = $('token-gate'), panel = $('admin-panel');
-  const tryToken = async () => {
-    token = token || $('token-input').value.trim();
-    const res = await api('/api/admin/articles');
-    if (res.ok) { sessionStorage.setItem('admin-token', token); gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll(); }
-    else { $('token-note').textContent = '令牌不正确，请重试。'; token = ''; }
+  const api = async (path, options = {}) => {
+    const doFetch = () => fetch(path, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(access ? { Authorization: `Bearer ${access}` } : {}), ...(options.headers || {}) }
+    }).then(async res => ({ ok: res.ok, status: res.status, data: await res.json().catch(() => ({})) }));
+    let res = await doFetch();
+    // access 过期 → 用 refresh 静默续期一次后重试
+    if (res.status === 401 && refresh && !path.startsWith('/api/auth/')) {
+      const r = await fetch('/api/auth/refresh', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh })
+      }).then(x => x.json()).catch(() => ({}));
+      if (r.access_token) {
+        access = r.access_token; refresh = r.refresh_token;
+        sessionStorage.setItem('admin-access', access);
+        sessionStorage.setItem('admin-refresh', refresh);
+        res = await doFetch();
+      }
+    }
+    return res;
   };
-  $('token-submit').addEventListener('click', tryToken);
-  $('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryToken(); });
-  if (token) { $('token-input').value = token; tryToken(); }
+
+  /* ---------- JWT 登录 ---------- */
+  const gate = $('token-gate'), panel = $('admin-panel');
+  const doLogin = async () => {
+    const username = $('user-input').value.trim();
+    const password = $('pass-input').value;
+    if (!username || !password) { $('token-note').textContent = '请输入用户名和密码。'; return; }
+    const res = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    }).then(r => r.json()).catch(() => ({}));
+    if (res.access_token) {
+      access = res.access_token; refresh = res.refresh_token;
+      sessionStorage.setItem('admin-access', access);
+      sessionStorage.setItem('admin-refresh', refresh);
+      gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll();
+    } else {
+      $('token-note').textContent = res.detail === '用户名或密码错误' ? '用户名或密码错误。'
+        : (res.detail || '登录失败，请重试。');
+    }
+  };
+  $('token-submit').addEventListener('click', doLogin);
+  $('pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  if (access && refresh) { gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll(); }
 
   /* ---------- 选项卡 ---------- */
   $('admin-tabs').addEventListener('click', e => {
@@ -39,7 +69,7 @@
       api('/api/stats'), api('/api/admin/articles'), api('/api/categories'),
       api('/api/admin/messages'), api('/api/admin/subscribers'), api('/api/settings')
     ]);
-    if (!stats.ok || !articles.ok) { sessionStorage.removeItem('admin-token'); location.reload(); return; }
+    if (!stats.ok || !articles.ok) { sessionStorage.removeItem('admin-access'); sessionStorage.removeItem('admin-refresh'); location.reload(); return; }
     const s = stats.data;
     $('admin-stats').innerHTML = [
       ['文章', s.articles], ['分类', s.categories],

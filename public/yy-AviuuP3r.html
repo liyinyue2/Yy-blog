@@ -81,8 +81,9 @@
 
 <div class="token-gate" id="token-gate">
   <h1>内容管理</h1>
-  <p style="color:#6b7280;font-size:14px;">输入管理令牌以继续。令牌由服务端 ADMIN_TOKEN 环境变量决定。</p>
-  <input type="password" id="token-input" placeholder="管理令牌" autocomplete="off" />
+  <p style="color:#6b7280;font-size:14px;">使用管理员账号登录（JWT 认证）。</p>
+  <input type="text" id="user-input" placeholder="用户名" autocomplete="username" />
+  <input type="password" id="pass-input" placeholder="密码" autocomplete="current-password" />
   <button id="token-submit" type="button">进入后台</button>
   <p class="admin-note" id="token-note"></p>
 </div>

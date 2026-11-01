@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from app.core.audit import audit_log
 from app.core.database import db
-from app.core.ratelimit import client_ip, rate_hit
+from app.core.ratelimit import client_ip, rate_hit, rate_limited
 from app.core.security import (create_access_token, create_refresh_token,
                                decode_token, get_current_user, verify_password)
 
@@ -26,7 +26,8 @@ class RefreshBody(BaseModel):
 @router.post("/login")
 def login(body: LoginBody, request: Request):
     ip = client_ip(request)
-    if rate_hit(f"login-fail:{ip}", *LIMIT_LOGIN_FAIL):
+    # 锁定判断与失败记录分离：只统计失败尝试，成功登录不占额度（与 v1.0 语义一致）
+    if rate_limited(f"login-fail:{ip}", *LIMIT_LOGIN_FAIL):
         audit_log("login-locked", body.username, ip)
         raise HTTPException(status_code=429, detail="失败次数过多，请 15 分钟后再试")
 
@@ -36,6 +37,7 @@ def login(body: LoginBody, request: Request):
     ).fetchone()
 
     if user is None or not verify_password(body.password, user["password_hash"]):
+        rate_hit(f"login-fail:{ip}", *LIMIT_LOGIN_FAIL)
         audit_log("login-fail", body.username, ip)
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 

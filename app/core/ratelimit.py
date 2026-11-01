@@ -27,6 +27,19 @@ def rate_hit(key: str, window_seconds: int, max_hits: int) -> bool:
         return False
 
 
+def rate_limited(key: str, window_seconds: int, max_hits: int) -> bool:
+    """只检查不记录：窗口内失败次数已达上限返回 True（用于登录前的锁定判断）。"""
+    now = time.monotonic()
+    with _lock:
+        hits = _buckets.get(key)
+        if not hits:
+            return False
+        cutoff = now - window_seconds
+        while hits and hits[0] < cutoff:
+            hits.pop(0)
+        return len(hits) >= max_hits
+
+
 def client_ip(request) -> str:
     """取客户端真实 IP（Nginx 反代场景优先 X-Real-IP）。"""
     real = request.headers.get("X-Real-IP")
