@@ -135,9 +135,11 @@
         for (const dot of mapDots) {
           const quietX = ((dot.x / W) - .5) / quietWidth; const quietY = ((dot.y / H) - quietCenter) / quietHeight;
           if (Math.hypot(quietX, quietY) < 1.05) continue;
-          const shimmer = .84 + .16 * Math.sin(t * 1.8 + dot.seed * 42);
-          const radius = Math.max(.8, step * (.22 + .25 * shimmer));
-          ctx.globalAlpha = .78 + .22 * shimmer; ctx.beginPath(); ctx.arc(dot.x, dot.y + Math.sin(t * .35 + dot.seed * 8) * .7, radius, 0, Math.PI * 2); ctx.fill();
+          const pulse = .5 + .5 * Math.sin(t * 2.15 + dot.seed * 34);
+          const wave = Math.sin(t * .72 - dot.x / Math.max(W, 1) * 8 + dot.seed * 5) * 1.25;
+          const driftX = Math.sin(t * .28 + dot.seed * 10) * .7;
+          const radius = Math.max(.8, step * (.17 + .31 * pulse));
+          ctx.globalAlpha = .58 + .42 * pulse; ctx.beginPath(); ctx.arc(dot.x + driftX, dot.y + wave, radius, 0, Math.PI * 2); ctx.fill();
         }
         ctx.globalAlpha = 1;
       }
