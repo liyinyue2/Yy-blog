@@ -48,3 +48,11 @@ async def security_headers(request: Request, call_next):
 @app.get("/api/health")
 async def health() -> JSONResponse:
     return JSONResponse({"status": "ok"})
+
+
+# 开发态静态托管必须最后注册（生产由 Nginx 托管，见 deploy/nginx.conf），
+# 否则会先于 API 路由匹配，把 /api/* 拦截成 404。
+if settings.ENV == "development":
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount("/", StaticFiles(directory="public", html=True), name="static")
