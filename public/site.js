@@ -2,6 +2,11 @@
     (() => {
       const toggle = document.querySelector('.menu-toggle');
       const menu = document.getElementById('mobile-menu');
+      const currentPath = window.location.pathname.replace(/index\.html$/, '') || '/';
+      document.querySelectorAll('.links a, .mobile-menu a').forEach(link => {
+        const linkPath = new URL(link.href, window.location.origin).pathname.replace(/index\.html$/, '') || '/';
+        link.classList.toggle('is-current', linkPath === currentPath);
+      });
       if (toggle && menu) {
         toggle.addEventListener('click', () => {
           const open = menu.classList.toggle('is-open');
