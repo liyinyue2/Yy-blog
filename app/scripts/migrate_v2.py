@@ -76,9 +76,39 @@ MUSIC_MIGRATIONS = [
 ]
 
 
+def _migrate_legacy_tags(conn) -> None:
+    """v1 旧 tags 表带 slug 列；v2 统一标签体系仅 (id, name)。
+
+    幂等：检测到旧 schema 时，迁移为 tags_legacy + 新 tags + taggables（article 关系一并转入）。
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(tags)")]
+    if not cols or "slug" not in cols:
+        return  # 新 schema 或空库，无需迁移
+    conn.execute("ALTER TABLE tags RENAME TO tags_legacy")
+    conn.execute("CREATE TABLE tags (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL)")
+    # 重建 taggables：RENAME 会把旧表的 FK 引用一并改指 tags_legacy，必须删掉重建才能指向新 tags
+    conn.execute("DROP TABLE IF EXISTS taggables")
+    conn.execute("""CREATE TABLE taggables (
+        tag_id INTEGER NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id INTEGER NOT NULL,
+        UNIQUE(tag_id, entity_type, entity_id),
+        FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
+    )""")
+    # 保留原 id，迁移历史标签与文章关联
+    conn.execute("INSERT OR IGNORE INTO tags (id, name) SELECT id, name FROM tags_legacy")
+    conn.execute(
+        "INSERT OR IGNORE INTO taggables (tag_id, entity_type, entity_id) "
+        "SELECT tag_id, 'article', article_id FROM article_tags")
+    conn.commit()
+    n = conn.execute("SELECT COUNT(*) n FROM taggables").fetchone()["n"]
+    print(f"[migrate] 旧标签体系已迁移：tags_legacy 归档，taggables 关联 {n} 条")
+
+
 def run() -> None:
     db.init()
     conn = db.conn()
+    _migrate_legacy_tags(conn)
     for sql in MIGRATIONS:
         conn.execute(sql)
     for sql in WORKSPACE_MIGRATIONS:

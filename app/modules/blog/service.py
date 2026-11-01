@@ -1,5 +1,4 @@
 """博客业务逻辑：SQL 全参数化，字段截断与校验规则与 v1.0 一致。"""
-import hashlib
 import re
 from datetime import datetime
 
@@ -52,7 +51,8 @@ def list_articles(q: str = "", category: str = "", tag: str = "") -> list[dict]:
     for r in rows:
         r["date"] = fmt_date(r.pop("published_at"))
         r["tags"] = [t["name"] for t in conn.execute(
-            "SELECT t.name FROM tags t JOIN article_tags at ON at.tag_id=t.id WHERE at.article_id=? ORDER BY t.id",
+            """SELECT t.name FROM tags t JOIN taggables g ON g.tag_id=t.id
+               WHERE g.entity_type='article' AND g.entity_id=? ORDER BY t.id""",
             (r["id"],))]
     return rows
 
@@ -67,7 +67,8 @@ def get_article(slug: str) -> dict:
     article = dict(row)
     article["date"] = fmt_date(article.pop("published_at"))
     article["tags"] = [t["name"] for t in conn.execute(
-        "SELECT t.name FROM tags t JOIN article_tags at ON at.tag_id=t.id WHERE at.article_id=? ORDER BY t.id",
+        """SELECT t.name FROM tags t JOIN taggables g ON g.tag_id=t.id
+           WHERE g.entity_type='article' AND g.entity_id=? ORDER BY t.id""",
         (article["id"],))]
     return article
 
@@ -204,10 +205,6 @@ def admin_delete_subscriber(sid: int, user: str, ip: str) -> dict:
     return {"ok": True, "deleted": sid}
 
 
-def _tag_slug_for(name: str) -> str:
-    return "t-" + hashlib.md5(name.encode("utf-8")).hexdigest()[:10]
-
-
 def save_article(old_slug: str | None, data, user: str, ip: str) -> dict:
     conn = db.conn()
     raw_slug = (data.slug or "").strip().lower().replace(" ", "-")[:64]
@@ -260,10 +257,12 @@ def save_article(old_slug: str | None, data, user: str, ip: str) -> dict:
                 (slug, title, cat["id"], summary, content, date))
             article_id = cur.lastrowid
         for tag in tags:
+            # v2 统一标签体系：tags(name) + taggables(entity_type='article')
             row = conn.execute("SELECT id FROM tags WHERE name=?", (tag,)).fetchone()
             tag_id = row["id"] if row else conn.execute(
-                "INSERT INTO tags (slug,name) VALUES (?,?)", (_tag_slug_for(tag), tag)).lastrowid
-            conn.execute("INSERT OR IGNORE INTO article_tags (article_id,tag_id) VALUES (?,?)", (article_id, tag_id))
+                "INSERT INTO tags (name) VALUES (?)", (tag,)).lastrowid
+            conn.execute("INSERT OR IGNORE INTO taggables (tag_id,entity_type,entity_id) VALUES (?,'article',?)",
+                         (tag_id, article_id))
         conn.commit()
     except HTTPException:
         raise
