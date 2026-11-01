@@ -1,0 +1,9 @@
+{
+  "name": "kindred-hero",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "python3 serve.py",
+    "check": "python3 -m json.tool public/manus-routes.json > /dev/null"
+  }
+}
