@@ -29,22 +29,22 @@ MIGRATIONS = [
     )""",
 ]
 
-# workspace.db（Phase 5）
+# workspace.db（Phase 5）—— ATTACH 为 workspace schema，建表语句必须带前缀
 WORKSPACE_MIGRATIONS = [
-    """CREATE TABLE IF NOT EXISTS notes (
+    """CREATE TABLE IF NOT EXISTS workspace.notes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL DEFAULT '',
         content TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
     )""",
-    """CREATE TABLE IF NOT EXISTS todos (
+    """CREATE TABLE IF NOT EXISTS workspace.todos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         content TEXT NOT NULL,
         done INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL
     )""",
-    """CREATE TABLE IF NOT EXISTS bookmarks (
+    """CREATE TABLE IF NOT EXISTS workspace.bookmarks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         url TEXT NOT NULL,
@@ -52,9 +52,9 @@ WORKSPACE_MIGRATIONS = [
     )""",
 ]
 
-# music.db（Phase 6）
+# music.db（Phase 6）—— ATTACH 为 music schema
 MUSIC_MIGRATIONS = [
-    """CREATE TABLE IF NOT EXISTS tracks (
+    """CREATE TABLE IF NOT EXISTS music.tracks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         artist TEXT NOT NULL DEFAULT '',
@@ -64,7 +64,7 @@ MUSIC_MIGRATIONS = [
         cover_path TEXT,
         created_at TEXT NOT NULL
     )""",
-    """CREATE TABLE IF NOT EXISTS files (
+    """CREATE TABLE IF NOT EXISTS music.files (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         uuid_name TEXT UNIQUE NOT NULL,
         original_name TEXT NOT NULL,
@@ -73,6 +73,15 @@ MUSIC_MIGRATIONS = [
         uploader_id INTEGER,
         created_at TEXT NOT NULL
     )""",
+]
+
+# 清理历史版本误建到主库的表（幂等）
+MAIN_CLEANUP = [
+    "DROP TABLE IF EXISTS notes",
+    "DROP TABLE IF EXISTS todos",
+    "DROP TABLE IF EXISTS bookmarks",
+    "DROP TABLE IF EXISTS tracks",
+    "DROP TABLE IF EXISTS files",
 ]
 
 
@@ -109,6 +118,8 @@ def run() -> None:
     db.init()
     conn = db.conn()
     _migrate_legacy_tags(conn)
+    for sql in MAIN_CLEANUP:
+        conn.execute(sql)
     for sql in MIGRATIONS:
         conn.execute(sql)
     for sql in WORKSPACE_MIGRATIONS:
