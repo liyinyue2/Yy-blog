@@ -13,8 +13,10 @@
     :root { --bg:#f7f7f5; --ink:#111; --mute:#989898; --sub:#777; --soft:#8d8d8d; }
     * { box-sizing:border-box; margin:0; padding:0; }
     html, body { height:100%; }
+    html { scroll-behavior:smooth; }
     body { background:var(--bg); color:var(--ink); font-family:Inter, "Noto Sans SC", system-ui, sans-serif; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
     a { color:inherit; text-decoration:none; }
+    button { border:0; font:inherit; }
     .hero { position:relative; height:100vh; min-height:660px; overflow:hidden; isolation:isolate; background:var(--bg); }
     #dots { position:absolute; inset:0; z-index:1; display:block; width:100%; height:100%; pointer-events:none; }
     nav { position:relative; z-index:3; display:flex; align-items:center; justify-content:center; gap:clamp(18px, 2.6vw, 40px); padding-top:36px; font-size:13.5px; line-height:1; }
@@ -42,16 +44,58 @@
     .social { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; transition:color .2s ease, transform .2s ease; }
     .social:hover { color:#111; transform:translateY(-1px); }
     .social svg { width:18px; height:18px; fill:currentColor; }
+    .menu-toggle { display:none; align-items:center; justify-content:center; width:40px; height:38px; border:1px solid #111; border-radius:999px; background:transparent; color:#111; cursor:pointer; }
+    .menu-toggle svg { width:16px; height:16px; fill:currentColor; }
+    .mobile-menu { display:none; }
+    .content-shell { background:#fff; }
+    .content-section { width:min(1100px, calc(100% - 40px)); margin:0 auto; padding:clamp(92px, 12vw, 164px) 0; }
+    .section-kicker { margin-bottom:16px; color:var(--mute); font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; }
+    .section-title { max-width:620px; font-size:clamp(30px, 4vw, 52px); font-weight:500; line-height:1.08; letter-spacing:-.045em; }
+    .section-intro { max-width:440px; margin-top:18px; color:var(--sub); font-size:14px; line-height:1.7; }
+    .featured-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; margin-top:54px; }
+    .article-card { display:flex; min-height:285px; flex-direction:column; justify-content:space-between; border:1px solid #e8e8e5; border-radius:18px; padding:24px; background:#fff; transition:border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
+    .article-card:hover { border-color:#111; transform:translateY(-4px); box-shadow:0 16px 34px rgba(17,17,17,.07); }
+    .article-meta { display:flex; align-items:center; justify-content:space-between; color:#969696; font-size:12px; }
+    .article-tag { color:#111; }
+    .article-card h3 { max-width:250px; margin-top:32px; font-size:22px; font-weight:500; line-height:1.3; letter-spacing:-.035em; }
+    .article-card p { margin-top:12px; color:var(--sub); font-size:13px; line-height:1.65; }
+    .read-link { display:inline-flex; align-items:center; gap:8px; margin-top:26px; font-size:13px; font-weight:500; }
+    .read-link span { transition:transform .2s ease; }
+    .article-card:hover .read-link span { transform:translateX(4px); }
+    .topic-layout { display:grid; grid-template-columns:1.15fr .85fr; gap:clamp(40px, 10vw, 150px); align-items:start; }
+    .topic-list { display:flex; flex-wrap:wrap; gap:10px; margin-top:30px; }
+    .topic-chip { border:1px solid #dcdcd8; border-radius:999px; padding:11px 16px; color:#333; font-size:13px; transition:background .2s ease, color .2s ease, border-color .2s ease; }
+    .topic-chip:hover { border-color:#111; background:#111; color:#fff; }
+    .about-copy { color:var(--sub); font-size:15px; line-height:1.85; }
+    .about-copy strong { color:#111; font-weight:500; }
+    .site-footer { border-top:1px solid #e8e8e5; background:#fff; }
+    .footer-inner { display:flex; width:min(1100px, calc(100% - 40px)); align-items:flex-end; justify-content:space-between; gap:30px; margin:0 auto; padding:34px 0 40px; }
+    .footer-brand { font-size:15px; font-weight:600; }
+    .footer-note { margin-top:10px; color:#999; font-size:12px; }
+    .footer-links { display:flex; flex-wrap:wrap; gap:22px; color:#777; font-size:12px; }
+    .footer-links a:hover { color:#111; }
+    .reveal { opacity:0; transform:translateY(18px); transition:opacity .7s ease, transform .7s ease; }
+    .reveal.is-visible { opacity:1; transform:none; }
     @media (max-width:760px) {
       nav { justify-content:space-between; padding:22px 18px 0; }
       .links { display:none; }
       .brand, .actions { margin:0; }
       .actions { gap:8px; }
       .subscribe { display:none; }
+      .menu-toggle { display:inline-flex; }
       .copy { top:20%; }
       h1 { letter-spacing:-.055em; }
       .socials { gap:14px 26px; font-size:13px; }
       .social svg { width:16px; height:16px; }
+      .mobile-menu { position:absolute; z-index:6; top:74px; right:18px; left:18px; display:flex; visibility:hidden; flex-direction:column; gap:2px; border:1px solid #dededb; border-radius:16px; padding:8px; background:rgba(255,255,255,.96); box-shadow:0 18px 45px rgba(17,17,17,.1); opacity:0; transform:translateY(-8px); transition:opacity .2s ease, transform .2s ease, visibility .2s ease; }
+      .mobile-menu.is-open { visibility:visible; opacity:1; transform:none; }
+      .mobile-menu a { border-radius:10px; padding:13px 14px; color:#333; font-size:14px; }
+      .mobile-menu a:hover { background:#f2f2ef; color:#111; }
+      .content-section { width:min(100% - 36px, 560px); padding:84px 0; }
+      .featured-grid, .topic-layout { grid-template-columns:1fr; gap:14px; margin-top:36px; }
+      .article-card { min-height:230px; padding:20px; }
+      .article-card h3 { margin-top:24px; font-size:20px; }
+      .footer-inner { width:calc(100% - 36px); align-items:flex-start; flex-direction:column; padding:28px 0 34px; }
     }
     @media (prefers-reduced-motion:reduce) {
       .cta::before, .cta a, .sign-in, .subscribe, .links a, .social { transition:none; }
@@ -59,7 +103,7 @@
   </style>
 </head>
 <body>
-  <section class="hero" aria-label="K's Blog 首页">
+  <section class="hero" id="home" aria-label="K's Blog 首页">
     <canvas id="dots" aria-hidden="true"></canvas>
 
     <nav aria-label="博客主导航">
@@ -77,13 +121,25 @@
       <div class="actions">
         <a class="subscribe" href="#subscribe">订阅</a>
         <a class="sign-in" href="#sign-in">登录</a>
+        <button class="menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="mobile-menu">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16v1.5H2zm0 5.25h16v1.5H2zM2 14.5h16V16H2z"/></svg>
+        </button>
       </div>
     </nav>
+
+    <div class="mobile-menu" id="mobile-menu" aria-label="移动端博客导航">
+      <a href="#home">首页</a>
+      <a href="#articles">文章</a>
+      <a href="#categories">分类</a>
+      <a href="#tags">标签</a>
+      <a href="#about">关于</a>
+      <a href="#subscribe">订阅 RSS</a>
+    </div>
 
     <div class="copy">
       <h1><span class="muted">记录思考，</span>分享创造。</h1>
       <p class="subline">这是一个关于前端开发、UI设计与个人成长的自留地。</p>
-      <div class="cta"><a href="#latest">阅读最新文章</a></div>
+      <div class="cta"><a href="#articles">阅读最新文章</a></div>
     </div>
 
     <div class="socials" aria-label="订阅与社交链接">
@@ -92,6 +148,74 @@
       <a class="social" href="#twitter" aria-label="Twitter X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.38L6.49 22H3.38l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2zm-1.1 17.9h1.73L8.28 4.04H6.42L17.8 19.9z"/></svg><span>Twitter (X)</span></a>
     </div>
   </section>
+
+  <main class="content-shell">
+    <section class="content-section reveal" id="articles" aria-labelledby="articles-title">
+      <p class="section-kicker">Latest notes / 01</p>
+      <h2 class="section-title" id="articles-title">把灵感写下来，<br />让想法继续生长。</h2>
+      <p class="section-intro">这里记录正在学习的技术、反复推敲的界面，以及那些让日常变得更有意思的小发现。</p>
+      <div class="featured-grid">
+        <article class="article-card">
+          <div>
+            <div class="article-meta"><span class="article-tag">前端开发</span><time datetime="2026-10-28">2026.10.28</time></div>
+            <h3>把复杂的交互，做得像呼吸一样自然</h3>
+            <p>从状态、反馈到节奏，重新理解一个好用的界面为什么让人感到轻松。</p>
+          </div>
+          <a class="read-link" href="#article-01">阅读全文 <span>↗</span></a>
+        </article>
+        <article class="article-card">
+          <div>
+            <div class="article-meta"><span class="article-tag">UI 设计</span><time datetime="2026-10-16">2026.10.16</time></div>
+            <h3>留白不是空白：界面中的安静力量</h3>
+            <p>从网格、比例和层次出发，聊聊为什么克制也可以是一种表达。</p>
+          </div>
+          <a class="read-link" href="#article-02">阅读全文 <span>↗</span></a>
+        </article>
+        <article class="article-card">
+          <div>
+            <div class="article-meta"><span class="article-tag">个人成长</span><time datetime="2026-09-30">2026.09.30</time></div>
+            <h3>给长期主义者的一个小型工作流</h3>
+            <p>不追逐每一个工具，只保留那些真正帮助自己持续前进的习惯。</p>
+          </div>
+          <a class="read-link" href="#article-03">阅读全文 <span>↗</span></a>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-section topic-layout reveal" id="categories" aria-labelledby="categories-title">
+      <div>
+        <p class="section-kicker">Explore / 02</p>
+        <h2 class="section-title" id="categories-title">沿着你的兴趣，<br />找到下一篇。</h2>
+        <div class="topic-list" id="tags" aria-label="文章分类与标签">
+          <a class="topic-chip" href="#frontend">Frontend</a>
+          <a class="topic-chip" href="#design">UI Design</a>
+          <a class="topic-chip" href="#creative-code">Creative Code</a>
+          <a class="topic-chip" href="#productivity">Productivity</a>
+          <a class="topic-chip" href="#life">Life Notes</a>
+        </div>
+      </div>
+      <div class="about-copy" id="about">
+        <p><strong>关于这个角落</strong></p>
+        <p style="margin-top:18px">我是一名在代码与设计之间来回探索的人。这个博客没有标准答案，只有持续记录的过程：做过什么、为什么这样做，以及下一次会如何做得更好。</p>
+        <p style="margin-top:18px">如果你也喜欢把好奇心变成作品，欢迎订阅，一起慢慢创造。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="subscribe">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">K's Blog</div>
+        <p class="footer-note">记录思考，分享创造。© 2026</p>
+      </div>
+      <div class="footer-links">
+        <a href="#rss">RSS 订阅</a>
+        <a href="#github">GitHub</a>
+        <a href="#twitter">Twitter (X)</a>
+        <a href="#home">回到顶部 ↑</a>
+      </div>
+    </div>
+  </footer>
 
   <script>
     (() => {
@@ -311,6 +435,33 @@
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
+    })();
+  </script>
+  <script>
+    (() => {
+      const toggle = document.querySelector('.menu-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (toggle && menu) {
+        toggle.addEventListener('click', () => {
+          const open = menu.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', String(open));
+          toggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+        });
+        menu.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+          menu.classList.remove('is-open');
+          toggle.setAttribute('aria-expanded', 'false');
+          toggle.setAttribute('aria-label', '打开菜单');
+        }));
+      }
+      const revealItems = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+          if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+        }), { threshold: .12 });
+        revealItems.forEach(item => observer.observe(item));
+      } else {
+        revealItems.forEach(item => item.classList.add('is-visible'));
+      }
     })();
   </script>
 </body>
