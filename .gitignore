@@ -1,0 +1,12 @@
+# 安全敏感文件 —— 永不入库
+.admin_token
+logs/
+
+# 本地数据与运行产物
+blog.db
+__pycache__/
+*.pyc
+data/
+uploads/
+logs/
+.env
