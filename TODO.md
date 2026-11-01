@@ -1,11 +1,13 @@
-# Kindred — Delivery Checklist
+# K's Blog — Delivery Checklist
 
-- [x] **Self-contained hero document.** Delivered one `index.html` containing all Kindred markup, CSS, inline SVG artwork, and vanilla JavaScript. The only external resources are Inter from Google Fonts and the supplied Higgsfield source sheet; it retains a full-viewport `section.hero`, a 660px minimum height, clipped overflow, and a canvas rendered every frame rather than a video or GIF.
+- [x] **全屏极简博客 Hero。** 页面保留纯白背景、黑白灰配色、无衬线字体、100vh 全屏布局、顶部导航、居中主视觉与底部入口三段式结构。
 
-- [x] **Editorial interface and responsive content.** Recreated the warm off-white monochrome hierarchy using the supplied tokens: centered Kindred navigation and brand mark, five desktop links, Sign In pill, two-line headline, exact supporting copy, rainbow-underlit Join the circle CTA, and the six named fictional partner lockups. At ≤760px links hide, brand and Sign In are spaced apart, copy moves to 20%, and logos wrap into two rows.
+- [x] **世界地图点阵背景。** 使用 Canvas 代码绘制横跨整个屏幕的黑色圆点世界地图，包含响应式重绘、轻微呼吸闪烁与中心留白保护区，确保地图不穿过标题、副标题和 CTA。
 
-- [x] **Live five-level LED halftone hands.** Loaded the prescribed sheet with `crossOrigin="anonymous"`, sliced the four prescribed crop rectangles into 420px tiles, sampled pose A and pose B through two tiny field canvases, and turned source luminance into quantized black dot sizes on horizontal scanline rows. DPR-capped canvas and grid measurements recompute after resize.
+- [x] **中文博客导航。** 左侧保留“K”图标并改为“K's Blog”；桌面导航包含“首页、文章、分类、标签、关于”；保留黑色圆角“登录”按钮，并加入描边“订阅”按钮。
 
-- [x] **Specified continuous and glitch motion.** Delivered 20-second counter-phase hand reach, breath, roll and shimmer; the given left/right time windows drive seeded dot-by-dot pose dissolves with flickering transition fronts and occasional row displacement; the center fade and quiet zone protect copy; `window.__render` is exposed; and portrait hands are lower, wider, and beneath the CTA.
+- [x] **博客 Hero 文案。** 主标题改为“记录思考，分享创造。”，副标题改为“这是一个关于前端开发、UI设计与个人成长的自留地。”，CTA 改为“阅读最新文章”，保持黑色圆角按钮和极简间距。
 
-- [x] **Static serving and validation.** Provided `/manus-routes.json`, ran the page on the project port, verified its route manifest, inspected desktop and mobile renders, and completed an independent implementation audit.
+- [x] **底部订阅与社交入口。** 原合作 Logo 行已替换为 RSS订阅、GitHub、Twitter (X) 三个内联 SVG 图标入口，并保留桌面居中与移动端响应式排列。
+
+- [x] **验证与保存。** 已通过 JSON、内联 JavaScript 语法和页面可访问性检查；已检查 1440px 桌面与 375px 移动预览；已将更新提交到项目主分支。
