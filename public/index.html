@@ -76,6 +76,24 @@
     .footer-links a:hover { color:#111; }
     .reveal { opacity:0; transform:translateY(18px); transition:opacity .7s ease, transform .7s ease; }
     .reveal.is-visible { opacity:1; transform:none; }
+    .article-card.is-hidden { display:none; }
+    .topic-chip { cursor:pointer; }
+    .topic-chip.is-active { border-color:#111; background:#111; color:#fff; }
+    .reader-backdrop { position:fixed; z-index:20; inset:0; display:grid; visibility:hidden; place-items:center; padding:24px; background:rgba(17,17,17,.28); opacity:0; transition:opacity .25s ease, visibility .25s ease; }
+    .reader-backdrop.is-open { visibility:visible; opacity:1; }
+    .reader-panel { position:relative; width:min(620px, 100%); max-height:min(680px, 90vh); overflow:auto; border-radius:22px; padding:clamp(26px, 5vw, 48px); background:#fff; box-shadow:0 26px 80px rgba(17,17,17,.2); transform:translateY(14px); transition:transform .25s ease; }
+    .reader-backdrop.is-open .reader-panel { transform:none; }
+    .reader-close { position:absolute; top:18px; right:18px; display:grid; width:32px; height:32px; place-items:center; border-radius:50%; background:#f1f1ee; color:#111; cursor:pointer; font-size:20px; line-height:1; }
+    .reader-label { color:var(--mute); font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; }
+    .reader-panel h2 { margin-top:18px; font-size:clamp(26px, 4vw, 42px); font-weight:500; line-height:1.18; letter-spacing:-.04em; }
+    .reader-panel p { margin-top:22px; color:var(--sub); font-size:15px; line-height:1.9; }
+    .subscribe-form { display:flex; gap:8px; margin-top:18px; }
+    .subscribe-form input { min-width:220px; border:1px solid #dcdcd8; border-radius:999px; padding:11px 15px; outline:none; background:#fff; color:#111; font:inherit; font-size:13px; }
+    .subscribe-form input:focus { border-color:#111; }
+    .subscribe-form button { border-radius:999px; padding:11px 16px; background:#111; color:#fff; cursor:pointer; font-size:13px; }
+    .form-note { min-height:18px; margin-top:10px; color:#777; font-size:12px; }
+    .toast { position:fixed; z-index:30; right:24px; bottom:24px; max-width:280px; border-radius:999px; padding:12px 17px; background:#111; color:#fff; box-shadow:0 12px 30px rgba(17,17,17,.18); font-size:13px; opacity:0; pointer-events:none; transform:translateY(10px); transition:opacity .25s ease, transform .25s ease; }
+    .toast.is-visible { opacity:1; transform:none; }
     @media (max-width:760px) {
       nav { justify-content:space-between; padding:22px 18px 0; }
       .links { display:none; }
@@ -96,6 +114,8 @@
       .article-card { min-height:230px; padding:20px; }
       .article-card h3 { margin-top:24px; font-size:20px; }
       .footer-inner { width:calc(100% - 36px); align-items:flex-start; flex-direction:column; padding:28px 0 34px; }
+      .subscribe-form { align-items:stretch; flex-direction:column; }
+      .subscribe-form input { min-width:0; width:100%; }
     }
     @media (prefers-reduced-motion:reduce) {
       .cta::before, .cta a, .sign-in, .subscribe, .links a, .social { transition:none; }
@@ -155,29 +175,29 @@
       <h2 class="section-title" id="articles-title">把灵感写下来，<br />让想法继续生长。</h2>
       <p class="section-intro">这里记录正在学习的技术、反复推敲的界面，以及那些让日常变得更有意思的小发现。</p>
       <div class="featured-grid">
-        <article class="article-card">
+        <article class="article-card" data-category="frontend">
           <div>
             <div class="article-meta"><span class="article-tag">前端开发</span><time datetime="2026-10-28">2026.10.28</time></div>
             <h3>把复杂的交互，做得像呼吸一样自然</h3>
             <p>从状态、反馈到节奏，重新理解一个好用的界面为什么让人感到轻松。</p>
           </div>
-          <a class="read-link" href="#article-01">阅读全文 <span>↗</span></a>
+          <a class="read-link article-open" href="#reader" data-title="把复杂的交互，做得像呼吸一样自然" data-category="前端开发">阅读全文 <span>↗</span></a>
         </article>
-        <article class="article-card">
+        <article class="article-card" data-category="design">
           <div>
             <div class="article-meta"><span class="article-tag">UI 设计</span><time datetime="2026-10-16">2026.10.16</time></div>
             <h3>留白不是空白：界面中的安静力量</h3>
             <p>从网格、比例和层次出发，聊聊为什么克制也可以是一种表达。</p>
           </div>
-          <a class="read-link" href="#article-02">阅读全文 <span>↗</span></a>
+          <a class="read-link article-open" href="#reader" data-title="留白不是空白：界面中的安静力量" data-category="UI 设计">阅读全文 <span>↗</span></a>
         </article>
-        <article class="article-card">
+        <article class="article-card" data-category="life">
           <div>
             <div class="article-meta"><span class="article-tag">个人成长</span><time datetime="2026-09-30">2026.09.30</time></div>
             <h3>给长期主义者的一个小型工作流</h3>
             <p>不追逐每一个工具，只保留那些真正帮助自己持续前进的习惯。</p>
           </div>
-          <a class="read-link" href="#article-03">阅读全文 <span>↗</span></a>
+          <a class="read-link article-open" href="#reader" data-title="给长期主义者的一个小型工作流" data-category="个人成长">阅读全文 <span>↗</span></a>
         </article>
       </div>
     </section>
@@ -187,11 +207,12 @@
         <p class="section-kicker">Explore / 02</p>
         <h2 class="section-title" id="categories-title">沿着你的兴趣，<br />找到下一篇。</h2>
         <div class="topic-list" id="tags" aria-label="文章分类与标签">
-          <a class="topic-chip" href="#frontend">Frontend</a>
-          <a class="topic-chip" href="#design">UI Design</a>
-          <a class="topic-chip" href="#creative-code">Creative Code</a>
-          <a class="topic-chip" href="#productivity">Productivity</a>
-          <a class="topic-chip" href="#life">Life Notes</a>
+          <button class="topic-chip is-active" type="button" data-filter="all">全部</button>
+          <button class="topic-chip" type="button" data-filter="frontend">Frontend</button>
+          <button class="topic-chip" type="button" data-filter="design">UI Design</button>
+          <button class="topic-chip" type="button" data-filter="life">Life Notes</button>
+          <button class="topic-chip" type="button" data-filter="all">Creative Code</button>
+          <button class="topic-chip" type="button" data-filter="all">Productivity</button>
         </div>
       </div>
       <div class="about-copy" id="about">
@@ -202,11 +223,27 @@
     </section>
   </main>
 
+  <div class="reader-backdrop" id="reader" role="dialog" aria-modal="true" aria-labelledby="reader-title" aria-hidden="true">
+    <article class="reader-panel">
+      <button class="reader-close" type="button" aria-label="关闭文章">×</button>
+      <p class="reader-label" id="reader-category">K's Blog / Note</p>
+      <h2 id="reader-title">文章标题</h2>
+      <p id="reader-copy">这里会展开这篇文章的摘要。保持好奇，认真观察，再把那些真正有价值的想法写下来，是这个博客最想坚持的事情。</p>
+      <p>完整文章正在整理中，先收藏这个主题，下一次更新时继续和你分享。</p>
+    </article>
+  </div>
+  <div class="toast" id="toast" aria-live="polite"></div>
+
   <footer class="site-footer" id="subscribe">
     <div class="footer-inner">
       <div>
         <div class="footer-brand">K's Blog</div>
         <p class="footer-note">记录思考，分享创造。© 2026</p>
+        <form class="subscribe-form" id="subscribe-form">
+          <input type="email" name="email" autocomplete="email" placeholder="输入邮箱，订阅更新" aria-label="邮箱地址" required />
+          <button type="submit">订阅</button>
+        </form>
+        <p class="form-note" id="form-note" aria-live="polite"></p>
       </div>
       <div class="footer-links">
         <a href="#rss">RSS 订阅</a>
@@ -462,6 +499,57 @@
       } else {
         revealItems.forEach(item => item.classList.add('is-visible'));
       }
+
+      const cards = [...document.querySelectorAll('.article-card')];
+      document.querySelectorAll('.topic-chip').forEach(chip => chip.addEventListener('click', () => {
+        const filter = chip.dataset.filter;
+        document.querySelectorAll('.topic-chip').forEach(item => item.classList.toggle('is-active', item === chip));
+        cards.forEach(card => card.classList.toggle('is-hidden', filter !== 'all' && card.dataset.category !== filter));
+      }));
+
+      const reader = document.getElementById('reader');
+      const readerTitle = document.getElementById('reader-title');
+      const readerCategory = document.getElementById('reader-category');
+      const closeReader = () => {
+        if (!reader) return;
+        reader.classList.remove('is-open');
+        reader.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      };
+      document.querySelectorAll('.article-open').forEach(link => link.addEventListener('click', event => {
+        event.preventDefault();
+        readerTitle.textContent = link.dataset.title;
+        readerCategory.textContent = `K's Blog / ${link.dataset.category}`;
+        reader.classList.add('is-open');
+        reader.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }));
+      reader?.querySelector('.reader-close')?.addEventListener('click', closeReader);
+      reader?.addEventListener('click', event => { if (event.target === reader) closeReader(); });
+      document.addEventListener('keydown', event => { if (event.key === 'Escape') closeReader(); });
+
+      const form = document.getElementById('subscribe-form');
+      const formNote = document.getElementById('form-note');
+      form?.addEventListener('submit', event => {
+        event.preventDefault();
+        const email = new FormData(form).get('email');
+        if (!email) return;
+        form.reset();
+        formNote.textContent = '已订阅，下一封更新会寄到你的邮箱。';
+      });
+
+      const toast = document.getElementById('toast');
+      let toastTimer;
+      const notify = message => {
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2800);
+      };
+      document.querySelector('.sign-in')?.addEventListener('click', event => {
+        event.preventDefault();
+        notify('登录功能正在准备中，先订阅获取更新。');
+      });
     })();
   </script>
 </body>
