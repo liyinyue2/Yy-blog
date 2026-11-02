@@ -82,14 +82,18 @@
   $('pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   if (access && refresh) { gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll(); }
 
-  /* ---------- 选项卡 ---------- */
-  $('admin-tabs').addEventListener('click', e => {
-    const btn = e.target.closest('[data-tab]');
-    if (!btn) return;
-    document.querySelectorAll('#admin-tabs button').forEach(b => b.classList.toggle('is-active', b === btn));
-    ['articles', 'categories', 'messages', 'subscribers', 'workspace', 'music', 'cloud', 'settings'].forEach(t =>
-      $('tab-' + t).classList.toggle('hidden', t !== btn.dataset.tab));
-  });
+  /* ---------- 面板路由（hash，刷新保持当前面板） ---------- */
+  const PANELS = ['workspace', 'cloud', 'music', 'articles', 'categories', 'tags',
+                  'messages', 'subscribers', 'settings', 'audit', 'admins'];
+  const showPanel = name => {
+    if (!PANELS.includes(name)) name = 'workspace';
+    document.querySelectorAll('[data-panel]').forEach(s =>
+      s.classList.toggle('hidden', s.dataset.panel !== name));
+    document.querySelectorAll('[data-panel-link]').forEach(a =>
+      a.classList.toggle('active', a.dataset.panelLink === name));
+  };
+  window.addEventListener('hashchange', () => showPanel(location.hash.slice(1)));
+  showPanel(location.hash.slice(1) || 'workspace');
 
   /* ---------- 数据加载 ---------- */
   const loadAll = async () => {
@@ -428,16 +432,76 @@
 
   /* ---------- 音乐管理 ---------- */
   const loadMusic = async () => {
-    const res = await api('/api/music/tracks?limit=100');
+    const res = await api('/api/admin/music/tracks?limit=500');
     if (!res.ok) return;
-    $('track-rows').innerHTML = res.data.length ? res.data.map(t => `
-      <tr>
-        <td><audio controls preload="none" src="/api/music/stream/${t.id}" style="height:32px;max-width:170px;"></audio></td>
-        <td>${escapeHtml(t.title || '(未知标题)')}<div class="muted">#${t.id}</div></td>
-        <td>${escapeHtml(t.artist || '—')}</td><td>${escapeHtml(t.album || '—')}</td>
-        <td>${fmtDur(t.duration)}</td><td class="muted">${escapeHtml(t.created_at)}</td>
-        <td class="actions"><button type="button" class="danger" data-del-track="${t.id}">删除</button></td>
-      </tr>`).join('') : '<tr><td colspan="7" class="muted">还没有曲目</td></tr>';
+    const tbody = $('track-rows');
+    tbody.textContent = '';
+    if (!res.data.length) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 8;
+      td.className = 'muted';
+      td.textContent = '还没有曲目';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    // 全部曲目字段经 textContent 渲染，防 XSS
+    res.data.forEach(t => {
+      const tr = document.createElement('tr');
+
+      const tdAudio = document.createElement('td');
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.preload = 'none';
+      audio.src = `/api/public/music/stream/${t.id}`;
+      audio.style.cssText = 'height:32px;max-width:170px;';
+      tdAudio.appendChild(audio);
+
+      const tdTitle = document.createElement('td');
+      tdTitle.textContent = t.title || '(未知标题)';
+      const sub = document.createElement('div');
+      sub.className = 'muted';
+      sub.textContent = '#' + t.id;
+      tdTitle.appendChild(sub);
+
+      const tdArtist = document.createElement('td');
+      tdArtist.textContent = t.artist || '—';
+      const tdAlbum = document.createElement('td');
+      tdAlbum.textContent = t.album || '—';
+      const tdDur = document.createElement('td');
+      tdDur.textContent = fmtDur(t.duration);
+      const tdTime = document.createElement('td');
+      tdTime.className = 'muted';
+      tdTime.textContent = t.created_at || '';
+
+      const tdVis = document.createElement('td');
+      const sel = document.createElement('select');
+      sel.className = 'vis-select';
+      sel.dataset.visTrack = t.id;
+      sel.dataset.prev = t.visibility;
+      sel.setAttribute('aria-label', '可见性');
+      [['public', '公开'], ['private', '私密']].forEach(([val, label]) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = label;
+        if (t.visibility === val) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      tdVis.appendChild(sel);
+
+      const tdOps = document.createElement('td');
+      tdOps.className = 'actions';
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'danger';
+      delBtn.dataset.delTrack = t.id;
+      delBtn.textContent = '删除';
+      tdOps.appendChild(delBtn);
+
+      tr.append(tdAudio, tdTitle, tdArtist, tdAlbum, tdDur, tdTime, tdVis, tdOps);
+      tbody.appendChild(tr);
+    });
   };
   $('m-btn').addEventListener('click', () => $('m-file').click());
   $('m-file').addEventListener('change', async () => {
@@ -457,8 +521,23 @@
     const delBtn = e.target.closest('[data-del-track]');
     if (delBtn) {
       if (!confirm('确定删除这首曲目？此操作不可恢复。')) return;
-      await api('/api/admin/music/tracks/' + delBtn.dataset.delTrack, { method: 'DELETE' });
+      await api('/api/admin/music/' + delBtn.dataset.delTrack, { method: 'DELETE' });
       loadMusic();
+    }
+  });
+  // 可见性切换：成功只更新该行状态，失败回退选择，均不整页刷新
+  $('track-rows').addEventListener('change', async e => {
+    const sel = e.target.closest('[data-vis-track]');
+    if (!sel) return;
+    const res = await api('/api/admin/music/' + sel.dataset.visTrack, {
+      method: 'PATCH', body: JSON.stringify({ visibility: sel.value })
+    });
+    if (res.ok) {
+      sel.dataset.prev = sel.value;
+      $('m-note').textContent = `曲目 #${sel.dataset.visTrack} 可见性已更新。`;
+    } else {
+      sel.value = sel.dataset.prev;
+      $('m-note').textContent = apiError(res.data, '可见性更新失败');
     }
   });
 
