@@ -502,13 +502,41 @@
 
   /* ---------- 音乐库 + 播放条 ---------- */
   let tracksCache = [];
+  let favIds = new Set();
   let playIndex = -1;
   const audio = $('np-audio');
   const loadMusic = async () => {
-    const res = await api('/api/admin/music/tracks?limit=200');
+    const [res, favs] = await Promise.all([
+      api('/api/admin/music/tracks?limit=200'), api('/api/admin/music/favorites')
+    ]);
     if (!res.ok) return;
     tracksCache = res.data;
+    favIds = new Set(favs.ok ? favs.data.map(t => t.id) : []);
     renderTracks();
+    renderFavs();
+    loadHistory();
+  };
+  const renderFavs = () => {
+    const favTracks = tracksCache.filter(t => favIds.has(t.id));
+    $('music-fav-card').style.display = favTracks.length ? '' : 'none';
+    $('music-fav-list').innerHTML = favTracks.map(t => {
+      const i = tracksCache.findIndex(x => x.id === t.id);
+      return `<div class="track-row"><button class="icon-btn" type="button" data-t-play="${i}" aria-label="播放"><svg class="ic"><use href="/icons.svg#i-play"/></svg></button>
+        <span class="track-title">${escapeHtml(t.title || '(未知标题)')}</span>
+        <span class="track-meta">${escapeHtml(t.artist || '—')}</span></div>`;
+    }).join('');
+  };
+  const loadHistory = async () => {
+    const res = await api('/api/admin/music/history?limit=8');
+    if (!res.ok) return;
+    const items = res.data;
+    $('music-history-card').style.display = items.length ? '' : 'none';
+    $('music-history-list').innerHTML = items.map(t => {
+      const i = tracksCache.findIndex(x => x.id === t.id);
+      return `<div class="track-row"><button class="icon-btn" type="button" data-t-play="${i >= 0 ? i : 0}" aria-label="播放"><svg class="ic"><use href="/icons.svg#i-play"/></svg></button>
+        <span class="track-title">${escapeHtml(t.title || '(未知标题)')}</span>
+        <span class="track-meta">${escapeHtml((t.last_played || '').replace('T', ' ').slice(0, 16))}</span></div>`;
+    }).join('');
   };
   const renderTracks = () => {
     $('music-list').innerHTML = tracksCache.length ? tracksCache.map((t, i) => `
@@ -516,6 +544,7 @@
         <button class="icon-btn" type="button" data-t-play="${i}" aria-label="播放"><svg class="ic"><use href="/icons.svg#i-play"/></svg></button>
         <span class="track-title">${escapeHtml(t.title || '(未知标题)')}</span>
         <span class="track-meta">${escapeHtml(t.artist || '—')}${t.album ? ' · ' + escapeHtml(t.album) : ''} · ${fmtDur(t.duration)}</span>
+        <button class="icon-btn star-btn${favIds.has(t.id) ? ' active' : ''}" type="button" data-t-fav="${t.id}" aria-label="收藏"><svg class="ic"><use href="/icons.svg#i-star"/></svg></button>
         ${t.visibility === 'private' ? '<span class="badge">私密</span>' : ''}
       </div>`).join('') : '<p class="tool-note">音乐库还是空的。去后台上传第一首。</p>';
   };
@@ -528,8 +557,28 @@
     $('np-title').textContent = `${t.title || '未知标题'}${t.artist ? ' — ' + t.artist : ''}`;
     $('space-player').classList.remove('hidden');
     renderTracks();
+    api(`/api/admin/music/${t.id}/play`, { method: 'POST' }).then(() => loadHistory());
   };
   $('music-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-t-play]');
+    if (btn) playTrack(+btn.dataset.tPlay);
+    const fav = e.target.closest('[data-t-fav]');
+    if (fav) {
+      const id = +fav.dataset.tFav;
+      const willFav = !favIds.has(id);
+      api(`/api/admin/music/${id}/favorite`, { method: 'PUT', body: JSON.stringify({ favorite: willFav }) })
+        .then(res => {
+          if (!res.ok) return;
+          if (willFav) favIds.add(id); else favIds.delete(id);
+          renderTracks(); renderFavs();
+        });
+    }
+  });
+  $('music-fav-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-t-play]');
+    if (btn) playTrack(+btn.dataset.tPlay);
+  });
+  $('music-history-list').addEventListener('click', e => {
     const btn = e.target.closest('[data-t-play]');
     if (btn) playTrack(+btn.dataset.tPlay);
   });

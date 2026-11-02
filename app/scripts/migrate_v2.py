@@ -161,6 +161,16 @@ MUSIC_MIGRATIONS = [
         cover_path TEXT,
         created_at TEXT NOT NULL
     )""",
+    """CREATE TABLE IF NOT EXISTS music.track_favorites (
+        track_id INTEGER PRIMARY KEY,
+        created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )""",
+    """CREATE TABLE IF NOT EXISTS music.play_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        track_id INTEGER NOT NULL,
+        played_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )""",
+    # 注：SQLite 的 CREATE INDEX 无法跨 ATTACH schema 限定表名，且播放记录量级极小，不建索引
 ]
 
 # 仅清理曾误建到主库的工作台/音乐表。files 属于主库，绝不能 DROP。

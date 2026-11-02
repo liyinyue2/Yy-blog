@@ -290,7 +290,15 @@
       <!-- 音乐库 -->
       <section data-panel="music" class="hidden">
         <h2>音乐库</h2>
-        <p class="space-section-sub">点击播放，底部播放条常驻。收藏与最近播放见播放列表。</p>
+        <p class="space-section-sub">点击播放，底部播放条常驻。星标收藏，最近播放自动记录。</p>
+        <div class="glass-card" style="display:none;" id="music-fav-card">
+          <h3>收藏</h3>
+          <div id="music-fav-list"></div>
+        </div>
+        <div class="glass-card" style="display:none;" id="music-history-card">
+          <h3>最近播放</h3>
+          <div id="music-history-list"></div>
+        </div>
         <div class="glass-card" id="music-list"></div>
       </section>
 

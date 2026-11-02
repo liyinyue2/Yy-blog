@@ -260,7 +260,63 @@ def delete_track(tid: int, request: Request, user: dict = Depends(require_admin)
     except (ValueError, OSError):
         pass  # 路径异常时只删记录，不动文件系统
     conn.execute("DELETE FROM taggables WHERE entity_type='track' AND entity_id=?", (tid,))
+    conn.execute("DELETE FROM music.track_favorites WHERE track_id=?", (tid,))
+    conn.execute("DELETE FROM music.play_history WHERE track_id=?", (tid,))
     conn.execute("DELETE FROM music.tracks WHERE id = ?", (tid,))
     conn.commit()
     audit_log("music-delete", f"id={tid}", client_ip(request), user=user["username"])
     return {"ok": True, "deleted": tid}
+
+
+# ---------- 收藏与播放记录（v2.3 P5，require_admin） ----------
+
+class FavoriteBody(BaseModel):
+    favorite: bool
+
+
+@router.get("/admin/music/favorites")
+def list_favorites(user: dict = Depends(require_admin)):
+    """收藏曲目列表（按收藏时间倒序）。"""
+    rows = db.conn().execute(
+        f"""SELECT t.id, t.title, t.artist, t.album, t.duration, t.created_at
+            FROM music.track_favorites f JOIN music.tracks t ON t.id = f.track_id
+            ORDER BY f.created_at DESC, f.track_id DESC""").fetchall()
+    return [dict(r) for r in rows]
+
+
+@router.put("/admin/music/{tid}/favorite")
+def toggle_favorite(tid: int, body: FavoriteBody, request: Request,
+                    user: dict = Depends(require_admin)):
+    conn = db.conn()
+    if not conn.execute("SELECT id FROM music.tracks WHERE id = ?", (tid,)).fetchone():
+        raise HTTPException(status_code=404, detail="曲目不存在")
+    if body.favorite:
+        conn.execute("INSERT OR IGNORE INTO music.track_favorites (track_id) VALUES (?)", (tid,))
+    else:
+        conn.execute("DELETE FROM music.track_favorites WHERE track_id = ?", (tid,))
+    conn.commit()
+    audit_log("music-favorite", f"id={tid} favorite={body.favorite}",
+              client_ip(request), user=user["username"])
+    return {"ok": True, "id": tid, "favorite": body.favorite}
+
+
+@router.post("/admin/music/{tid}/play")
+def record_play(tid: int, request: Request, user: dict = Depends(require_admin)):
+    """记录一次播放（播放历史）。"""
+    conn = db.conn()
+    if not conn.execute("SELECT id FROM music.tracks WHERE id = ?", (tid,)).fetchone():
+        raise HTTPException(status_code=404, detail="曲目不存在")
+    cur = conn.execute("INSERT INTO music.play_history (track_id) VALUES (?)", (tid,))
+    conn.commit()
+    return {"ok": True, "id": cur.lastrowid}
+
+
+@router.get("/admin/music/history")
+def play_history(limit: int = 10, user: dict = Depends(require_admin)):
+    """最近播放（去重到曲目粒度，按最近一次播放时间倒序）。"""
+    limit = max(1, min(limit, 50))
+    rows = db.conn().execute(
+        f"""SELECT t.id, t.title, t.artist, t.album, t.duration, MAX(h.played_at) AS last_played
+            FROM music.play_history h JOIN music.tracks t ON t.id = h.track_id
+            GROUP BY h.track_id ORDER BY last_played DESC LIMIT ?""", (limit,)).fetchall()
+    return [dict(r) for r in rows]
