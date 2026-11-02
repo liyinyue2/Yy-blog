@@ -11,3 +11,7 @@ uploads/
 logs/
 .env
 legacy/*.db*
+
+# 数据库备份（含用户数据，永不上传）
+backups/
+.venv/
