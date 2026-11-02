@@ -9,12 +9,12 @@
 <title>音乐 — Y's Blog</title>
 <style>
   .music-main { padding-bottom: 120px; }
-  .track-table { width: 100%; border-top: 1px solid rgba(0,0,0,.08); }
+  .track-table { width: 100%; border-top: 1px solid var(--hairline); }
   .track-row {
     display: grid; grid-template-columns: 44px 44px minmax(0,2fr) minmax(0,1fr) 64px;
     align-items: center; gap: 16px; padding: 12px 8px;
-    border-bottom: 1px solid rgba(0,0,0,.08); cursor: pointer;
-    transition: background .15s ease;
+    border-bottom: 1px solid var(--hairline); cursor: pointer;
+    transition: background var(--t-fast) var(--ease);
   }
   .track-row:hover { background: rgba(0,0,0,.025); }
   .track-row.is-playing { background: rgba(0,0,0,.045); }
@@ -22,7 +22,7 @@
   .track-no { color: #9ca3af; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
   .track-cover {
     width: 44px; height: 44px; object-fit: cover; display: block;
-    border: 1px solid rgba(0,0,0,.08); background: #f2f2ef; padding: 8px;
+    border: 1px solid var(--hairline); background: var(--surface); padding: 8px;
   }
   .track-title { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .track-artist { color: #777; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -32,12 +32,13 @@
     position: fixed; z-index: 10; right: 0; bottom: 0; left: 0;
     display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr) minmax(0,1fr);
     align-items: center; gap: 24px; height: 72px; padding: 0 24px;
-    border-top: 1px solid rgba(0,0,0,.12); background: #fff;
+    border-top: 1px solid var(--hairline); background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin);
   }
   .player-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .player-cover {
     width: 44px; height: 44px; flex: none; object-fit: cover;
-    border: 1px solid rgba(0,0,0,.08); background: #f2f2ef; padding: 8px;
+    border: 1px solid var(--hairline); background: var(--surface); padding: 8px;
   }
   .player-text { min-width: 0; }
   .player-title { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -212,10 +212,18 @@
 
       let raf = 0;
       let pageVisible = true;
+      // 性能纪律（P0 设计系统）：动画上限 30fps；prefers-reduced-motion 时只渲染一帧静态图
+      const FRAME_MIN_MS = 1000 / 30;
+      let lastRender = 0;
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       function frame(now) {
         raf = 0;
         if (!pageVisible || document.hidden) return;
-        render((now - firstTime) / 1000);
+        if (reduceMotion) { render(0); return; }
+        if (now - lastRender >= FRAME_MIN_MS - 1) {
+          lastRender = now;
+          render((now - firstTime) / 1000);
+        }
         raf = requestAnimationFrame(frame);
       }
       function kick() {
