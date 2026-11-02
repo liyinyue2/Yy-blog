@@ -27,6 +27,16 @@ MIGRATIONS = [
         UNIQUE(tag_id, entity_type, entity_id),
         FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
     )""",
+    # Phase 7：网盘文件表（主库）
+    """CREATE TABLE IF NOT EXISTS files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid_name TEXT UNIQUE NOT NULL,
+        original_name TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        mime TEXT NOT NULL,
+        uploader_id INTEGER,
+        created_at TEXT NOT NULL
+    )""",
 ]
 
 # workspace.db（Phase 5）—— ATTACH 为 workspace schema，建表语句必须带前缀
@@ -64,15 +74,6 @@ MUSIC_MIGRATIONS = [
         cover_path TEXT,
         created_at TEXT NOT NULL
     )""",
-    """CREATE TABLE IF NOT EXISTS music.files (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid_name TEXT UNIQUE NOT NULL,
-        original_name TEXT NOT NULL,
-        size INTEGER NOT NULL,
-        mime TEXT NOT NULL,
-        uploader_id INTEGER,
-        created_at TEXT NOT NULL
-    )""",
 ]
 
 # 清理历史版本误建到主库的表（幂等）
@@ -80,7 +81,7 @@ MAIN_CLEANUP = [
     "DROP TABLE IF EXISTS notes",
     "DROP TABLE IF EXISTS todos",
     "DROP TABLE IF EXISTS bookmarks",
-    "DROP TABLE IF EXISTS tracks",
+    "DROP TABLE IF EXISTS tracks", "DROP TABLE IF EXISTS files",
     "DROP TABLE IF EXISTS files",
 ]
 

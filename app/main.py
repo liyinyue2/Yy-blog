@@ -12,6 +12,7 @@ from app.modules.blog.router import router as blog_router
 from app.modules.tags.router import router as tags_router
 from app.modules.workspace.router import router as workspace_router
 from app.modules.music.router import router as music_router
+from app.modules.cloud.router import router as cloud_router
 
 
 @asynccontextmanager
@@ -55,6 +56,7 @@ app.include_router(blog_router)
 app.include_router(tags_router)
 app.include_router(workspace_router)
 app.include_router(music_router)
+app.include_router(cloud_router)
 
 
 @app.get("/api/health")
