@@ -20,15 +20,15 @@
       --ok: #30a46c;
 
       /* -- 玻璃 -- */
-      --glass-bg: rgba(255,255,255,.56);
-      --glass-bg-strong: rgba(255,255,255,.78);
+      --glass-bg: rgba(255,255,255,.46);
+      --glass-bg-strong: rgba(255,255,255,.72);
       --glass-bg-dark: rgba(28,28,30,.72);       /* 深色玻璃（toast 等） */
-      --glass-blur: saturate(180%) blur(24px);   /* 卡片/侧栏 */
-      --glass-blur-thin: saturate(160%) blur(14px); /* 顶栏/悬浮层 */
+      --glass-blur: saturate(200%) blur(28px);   /* 卡片/侧栏 */
+      --glass-blur-thin: saturate(180%) blur(18px); /* 顶栏/悬浮层 */
       --glass-fallback: rgba(255,255,255,.97);   /* 无 backdrop-filter 降级 */
       --hairline: rgba(0,0,0,.08);               /* 1px 发丝边 */
       --hairline-strong: rgba(0,0,0,.14);
-      --highlight: rgba(255,255,255,.65);        /* 顶部内高光 */
+      --highlight: rgba(255,255,255,.78);        /* 顶部内高光 */
 
       /* -- 几何（4px 网格）-- */
       --r-s: 10px; --r-m: 16px; --r-l: 22px; --r-pill: 999px;
@@ -51,8 +51,8 @@
       --focus-ring: 0 0 0 3px rgba(10,132,255,.35);
 
       /* -- 环境光斑（玻璃的"折射源"，白底上玻璃必须有它才可见）-- */
-      --ambient-1: rgba(10,132,255,.16);   /* iOS 蓝 */
-      --ambient-2: rgba(255,159,10,.12);   /* iOS 橙 */
+      --ambient-1: rgba(10,132,255,.32);   /* iOS 蓝 */
+      --ambient-2: rgba(255,159,10,.24);   /* iOS 橙 */
 
       /* -- 旧变量映射（存量页面兼容层，禁止再新增硬编码引用）-- */
       --bg: var(--surface);
@@ -87,11 +87,11 @@
       content: ""; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%;
     }
     body::before {
-      width: 56vw; height: 56vw; min-width: 420px; min-height: 420px; top: -16vw; right: -12vw;
+      width: 72vw; height: 72vw; min-width: 520px; min-height: 520px; top: -20vw; right: -16vw;
       background: radial-gradient(closest-side, var(--ambient-1), transparent 72%);
     }
     body::after {
-      width: 48vw; height: 48vw; min-width: 380px; min-height: 380px; bottom: -14vw; left: -10vw;
+      width: 64vw; height: 64vw; min-width: 460px; min-height: 460px; bottom: -18vw; left: -14vw;
       background: radial-gradient(closest-side, var(--ambient-2), transparent 72%);
     }
     * { box-sizing:border-box; margin:0; padding:0; }
