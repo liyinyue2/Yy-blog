@@ -770,6 +770,20 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiSend(); }
   });
 
+  /* ---------- 侧栏展开 / 收起（状态记忆） ---------- */
+  const railToggle = $('rail-toggle');
+  const setRail = open => {
+    shell.classList.toggle('rail-open', open);
+    railToggle.setAttribute('aria-expanded', String(open));
+    railToggle.title = open ? '收起侧栏' : '展开侧栏';
+    railToggle.setAttribute('aria-label', railToggle.title);
+    const lbl = railToggle.querySelector('.rail-label');
+    if (lbl) lbl.textContent = open ? '收起' : '展开';
+    try { localStorage.setItem('space-rail-open', open ? '1' : '0'); } catch {}
+  };
+  railToggle.addEventListener('click', () => setRail(!shell.classList.contains('rail-open')));
+  try { setRail(localStorage.getItem('space-rail-open') === '1'); } catch { setRail(false); }
+
   /* ---------- 启动 ---------- */
   const boot = () => {
     $('space-user').textContent = 'admin';
