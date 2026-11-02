@@ -1,5 +1,10 @@
 """音乐模块：曲目元数据 + 流式上传 + HTTP Range 流媒体（music.db）。
 
+v2.1 起接口拆分为公开/管理两套：
+- /api/public/music/*  匿名只读，仅暴露 visibility='public' 的曲目
+- /api/admin/music/*   require_admin，含上传/可见性切换/删除
+v2.0 旧公开接口 /api/music/* 已删除（无法按 visibility 过滤，存在越权读取风险）。
+
 关于 safeuploads：文档指定的 `safeuploads` 库在 PyPI 不存在（2026-11 检索确认），
 按文档"安全硬约束"条款以同等强度的内置校验实现：扩展名白名单 + MIME 签名校验 + 拒绝用户原始文件名。
 """
@@ -10,6 +15,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from mutagen import File as MutagenFile
+from pydantic import BaseModel
 
 from app.core.audit import audit_log
 from app.core.config import settings
@@ -28,6 +34,15 @@ AUDIO_WHITELIST = {
     "wav": [b"RIFF"],
 }
 MAX_AUDIO_SIZE = 100 * 1024 * 1024  # 100MB（音频文件通常较大，Nginx 层对 /api/ 上限单独放宽）
+
+VISIBILITY_VALUES = {"public", "private"}
+
+# 列表对外字段：不含 file_path / cover_path（磁盘绝对路径不外泄；封面暂无服务接口，前端回退站点图标）
+_TRACK_COLS = "id, title, artist, album, duration, created_at"
+
+
+class VisibilityBody(BaseModel):
+    visibility: str = ""
 
 
 def _sniff_ok(ext: str, head: bytes) -> bool:
@@ -60,45 +75,20 @@ def _range_header(range_header: str, size: int) -> tuple[int, int]:
     return start, min(end, size - 1)
 
 
-@router.get("/music/tracks")
-def list_tracks(q: str = "", artist: str = "", tag: str = "", limit: int = 50, offset: int = 0):
-    """曲目列表/搜索（公开只读）；tag 走统一标签体系。"""
-    conn = db.conn()
-    limit = max(1, min(limit, 100))
-    sql = "SELECT id, title, artist, album, duration, cover_path, created_at FROM music.tracks WHERE 1=1"
-    params: list = []
-    if q:
-        sql += " AND (title LIKE ? OR artist LIKE ? OR album LIKE ?)"
-        params += [f"%{q}%"] * 3
-    if artist:
-        sql += " AND artist = ?"
-        params.append(artist)
-    if tag:
-        sql += """ AND id IN (SELECT g.entity_id FROM taggables g JOIN tags t ON t.id = g.tag_id
-                   WHERE g.entity_type = 'track' AND (t.name = ?))"""
-        params.append(tag)
-    sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
-    params += [limit, max(0, offset)]
-    return [dict(r) for r in conn.execute(sql, params)]
-
-
-@router.get("/music/stream/{tid}")
-def stream_track(tid: int, request: Request):
-    """HTTP Range 流媒体：按分块响应，禁止一次性读全文件。"""
-    conn = db.conn()
-    row = conn.execute("SELECT file_path, title FROM music.tracks WHERE id = ?", (tid,)).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="曲目不存在")
-    file_path = Path(row["file_path"])
-    # 路径穿越防护：解析后必须仍位于 uploads/music 内
+def _resolve_track_file(file_path: str) -> Path:
+    """路径穿越防护：解析后必须仍位于 uploads/music 内。"""
     try:
-        resolved = file_path.resolve()
+        resolved = Path(file_path).resolve()
         resolved.relative_to((settings.UPLOAD_DIR / "music").resolve())
     except (ValueError, OSError):
         raise HTTPException(status_code=400, detail="非法文件路径")
     if not resolved.exists():
         raise HTTPException(status_code=404, detail="音频文件缺失")
+    return resolved
 
+
+def _stream_file(resolved: Path, request: Request) -> StreamingResponse:
+    """HTTP Range 流媒体：按分块响应，禁止一次性读全文件。"""
     size = resolved.stat().st_size
     range_header = request.headers.get("Range")
     chunk_size = 256 * 1024
@@ -132,10 +122,60 @@ def stream_track(tid: int, request: Request):
     return StreamingResponse(file_iter(0, size - 1), media_type=media_type, headers=headers)
 
 
+# ---------- 公开接口（匿名只读） ----------
+
+@router.get("/public/music/tracks")
+def list_public_tracks(q: str = "", artist: str = "", tag: str = "",
+                       limit: int = 50, offset: int = 0):
+    """公开曲目列表/搜索：仅 visibility='public'；tag 走统一标签体系。"""
+    conn = db.conn()
+    limit = max(1, min(limit, 100))
+    sql = f"SELECT {_TRACK_COLS} FROM music.tracks WHERE visibility = 'public'"
+    params: list = []
+    if q:
+        sql += " AND (title LIKE ? OR artist LIKE ? OR album LIKE ?)"
+        params += [f"%{q}%"] * 3
+    if artist:
+        sql += " AND artist = ?"
+        params.append(artist)
+    if tag:
+        sql += """ AND id IN (SELECT g.entity_id FROM taggables g JOIN tags t ON t.id = g.tag_id
+                   WHERE g.entity_type = 'track' AND (t.name = ?))"""
+        params.append(tag)
+    sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
+    params += [limit, max(0, offset)]
+    return [dict(r) for r in conn.execute(sql, params)]
+
+
+@router.get("/public/music/stream/{tid}")
+def stream_public_track(tid: int, request: Request):
+    """公开流媒体：private 曲目 403，不存在 404。"""
+    conn = db.conn()
+    row = conn.execute(
+        "SELECT file_path, visibility FROM music.tracks WHERE id = ?", (tid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="曲目不存在")
+    if row["visibility"] != "public":
+        raise HTTPException(status_code=403, detail="该曲目未公开")
+    return _stream_file(_resolve_track_file(row["file_path"]), request)
+
+
+# ---------- 管理接口（require_admin） ----------
+
+@router.get("/admin/music/tracks")
+def list_all_tracks(limit: int = 100, offset: int = 0, user: dict = Depends(require_admin)):
+    """全部曲目（含 private），带 visibility 字段。"""
+    conn = db.conn()
+    limit = max(1, min(limit, 500))
+    sql = (f"SELECT {_TRACK_COLS}, visibility FROM music.tracks"
+           " ORDER BY id DESC LIMIT ? OFFSET ?")
+    return [dict(r) for r in conn.execute(sql, (limit, max(0, offset)))]
+
+
 @router.post("/admin/music/upload")
 async def upload_track(request: Request, file: UploadFile,
                        user: dict = Depends(require_admin)):
-    """流式上传音频：扩展名白名单 + MIME 签名校验 + UUID 落盘（禁用原始文件名）。"""
+    """流式上传音频：扩展名白名单 + MIME 签名校验 + UUID 落盘（禁用原始文件名）。新曲目默认 public。"""
     ip = client_ip(request)
     ext = (file.filename or "").lower().rsplit(".", 1)[-1]
     if ext not in AUDIO_WHITELIST:
@@ -177,7 +217,8 @@ async def upload_track(request: Request, file: UploadFile,
     conn = db.conn()
     try:
         cur = conn.execute(
-            "INSERT INTO music.tracks (title, duration, file_path, created_at) VALUES (?,?,?,datetime('now','localtime'))",
+            "INSERT INTO music.tracks (title, duration, file_path, visibility, created_at)"
+            " VALUES (?,?,?,'public',datetime('now','localtime'))",
             (title, duration, str(dest)))
         conn.commit()
     except Exception:
@@ -188,7 +229,25 @@ async def upload_track(request: Request, file: UploadFile,
     return {"ok": True, "id": cur.lastrowid, "title": title, "duration": duration, "size": size}
 
 
-@router.delete("/admin/music/tracks/{tid}")
+@router.patch("/admin/music/{tid}")
+def update_track_visibility(tid: int, body: VisibilityBody, request: Request,
+                            user: dict = Depends(require_admin)):
+    """切换曲目可见性：白名单校验，非法值 400。"""
+    if body.visibility not in VISIBILITY_VALUES:
+        raise HTTPException(status_code=400, detail="visibility 仅允许 public / private")
+    conn = db.conn()
+    row = conn.execute("SELECT visibility FROM music.tracks WHERE id = ?", (tid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="曲目不存在")
+    old = row["visibility"]
+    conn.execute("UPDATE music.tracks SET visibility = ? WHERE id = ?", (body.visibility, tid))
+    conn.commit()
+    audit_log("music-visibility", f"id={tid} {old}->{body.visibility}",
+              client_ip(request), user=user["username"])
+    return {"ok": True, "id": tid, "visibility": body.visibility}
+
+
+@router.delete("/admin/music/{tid}")
 def delete_track(tid: int, request: Request, user: dict = Depends(require_admin)):
     conn = db.conn()
     row = conn.execute("SELECT file_path FROM music.tracks WHERE id = ?", (tid,)).fetchone()
