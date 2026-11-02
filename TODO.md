@@ -185,3 +185,14 @@ CORS 白名单（无 *）· 全局安全响应头中间件 · 审计日志全覆
 - [x] **P6 AI 中心**：ai_conversations/ai_messages、SSE 流式聊天（OpenAI 兼容上游，密钥仅服务端 env：AI_API_KEY/AI_BASE_URL/AI_MODEL）、限流 60s/10 次、审计埋点、前端 textContent 渲染；未配置密钥时 503 提示；tag `v2.3-p6`。
 - [x] **P7 收尾**：审计日志在线查看（`/api/admin/audit` + 后台面板搜索/刷新）、遗留表 tags_legacy/article_tags 归档后 DROP（`python -m app.scripts.cleanup_legacy`，归档在 data/legacy-archive/）、89 项回归全绿、桌面/移动双端截图自查；tag `v2.3`。
 - [ ] **待办（下一阶段）**：Docker Compose 服务器实测；site.css 残余硬编码色值清理；AI 知识库问答（RAG）；后台 admin 页内联样式迁移到外部 CSS。
+
+# v2.4 Liquid Glass 全站视觉系统（2026-11-02）
+
+- [x] **官方组件研究**：Aceternity UI LiquidGlass 源码（React/TSX）完整研读——Canvas SDF+Snell 位移贴图、feDisplacementMap×3 色散、backdrop-filter: url(#id)、三级降级、ResizeObserver 重建、filter id 防缓存。
+- [x] **原生移植**：`public/liquid-glass.js`（零依赖，纯原生 JS），`data-liquid-glass` 属性驱动渐进增强，`data-lg-*` 参数（radius/bevel/scale/aberration/frost）。来源与许可注明于文件头。
+- [x] **应用范围**：折射=全站顶栏/首页 hero 导航/个人空间侧栏+播放条/音乐播放条/搜索弹层/分段标签容器；磨砂=普通玻璃按钮/输入框/后台侧栏；不透明=reduced-transparency。
+- [x] **分段标签**：kind/topic/project 三组筛选实现平滑移动的深色选中层（seg-pill），动态重渲染自愈。
+- [x] **统一交互**：悬停/按下/焦点环/禁用全站一致；亮暗双主题 --lg-tint 变量。
+- [x] **兼容性**：Chromium 折射实测通过；Safari/Firefox 磨砂降级（判定逻辑与官方一致）；prefers-reduced-transparency CSS 兜底；CSP img-src 放行 blob:。
+- [x] **验证**：89 项回归全绿；桌面/移动/触摸截图与交互测试通过；零 console 报错。tag `v2.4-liquid-glass`。
+- [ ] 待办：真实 Safari/Firefox 人工复验（无头环境只验证了判定分支）；折射元素数量可按需增减（改 data-liquid-glass 即可）。

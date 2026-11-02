@@ -215,12 +215,14 @@
       var v = parseFloat(el.getAttribute('data-lg-' + name));
       return isNaN(v) ? dflt : v;
     };
+    // 默认值与官方组件一致：radius 999 / bevel 14 / scale 48 / aberration 4 / frost 0.4
     return {
-      radius: num('radius', 14),
-      bevelDepth: num('bevel', 8),
-      scale: num('scale', 24),
+      radius: num('radius', 999),
+      bevelDepth: num('bevel', 14),
+      scale: num('scale', 48),
       aberration: num('aberration', 4),
       frost: num('frost', 0.4),
+      draggable: el.hasAttribute('data-lg-draggable'),
     };
   }
 
@@ -247,6 +249,10 @@
     var state = { el: el, opts: opts, ro: null, blobUrl: null };
     registry.set(el, state);
     el.classList.add('lg-glass');
+    // 官方行为：radius 同时决定 CSS 圆角与贴图形状（显式指定时才覆盖 CSS）
+    if (!isNaN(parseFloat(el.getAttribute('data-lg-radius')))) {
+      el.style.borderRadius = Math.min(opts.radius, 999) + 'px';
+    }
     ensureSvgHost();
 
     if (prefersReducedTransparency()) { applyFallback(el, true); return; }
@@ -305,6 +311,39 @@
       var rect = el.getBoundingClientRect();
       rebuild(Math.max(1, Math.round(rect.width)), Math.max(1, Math.round(rect.height)));
     }
+
+    if (opts.draggable) enableDrag(el);
+  }
+
+  /** 官方 demo 交互：透镜可拖拽（Pointer Events，含触摸） */
+  function enableDrag(el) {
+    el.classList.add('lg-draggable');
+    var sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+    el.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      sx = e.clientX - ox; sy = e.clientY - oy;
+      el.classList.add('is-dragging');
+      if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    // 兼容事件与原生拖选一并拦掉（pointerdown 的 preventDefault 不覆盖它们）
+    el.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    el.addEventListener('dragstart', function (e) { e.preventDefault(); });
+    el.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      ox = e.clientX - sx; oy = e.clientY - sy;
+      el.style.transform = 'translate(' + ox + 'px,' + oy + 'px)';
+    });
+    var end = function (e) {
+      if (!dragging) return;
+      dragging = false;
+      el.classList.remove('is-dragging');
+      if (el.releasePointerCapture && e.pointerId != null) {
+        try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
   }
 
   /** 扫描并增强容器内所有 [data-liquid-glass] 元素 */

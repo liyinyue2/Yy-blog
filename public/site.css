@@ -516,6 +516,53 @@ a:focus-visible, button:focus-visible { border-radius: var(--r-s); }
 .icon-btn { transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .icon-btn:active { transform: scale(.92); }
 
+/* 官方 demo 交互：透镜可拖拽 */
+.lg-draggable { cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
+.lg-draggable.is-dragging { cursor:grabbing; }
+.lg-draggable.is-dragging:active { transform:none; } /* 防止 :active 缩放干扰拖拽 transform */
+
+/* Hero 渐变光斑层：给折射玻璃提供可弯曲的彩色内容（官方 demo 同思路） */
+.hero-blobs { position:absolute; inset:-10%; z-index:0; pointer-events:none; filter:blur(2px); }
+.hero-blobs::before, .hero-blobs::after {
+  content:""; position:absolute; border-radius:50%;
+}
+.hero-blobs::before {
+  width:56vw; height:56vw; min-width:420px; min-height:420px; top:-8%; right:-6%;
+  background:
+    radial-gradient(closest-side at 30% 35%, rgba(56,189,248,.85), transparent 70%),
+    radial-gradient(closest-side at 70% 60%, rgba(232,121,249,.75), transparent 72%),
+    radial-gradient(closest-side at 45% 80%, rgba(253,224,71,.65), transparent 70%);
+}
+.hero-blobs::after {
+  width:44vw; height:44vw; min-width:340px; min-height:340px; bottom:-12%; left:-4%;
+  background:
+    radial-gradient(closest-side at 60% 40%, rgba(74,222,128,.7), transparent 70%),
+    radial-gradient(closest-side at 30% 70%, rgba(96,165,250,.7), transparent 72%);
+}
+[data-theme="dark"] .hero-blobs::before {
+  background:
+    radial-gradient(closest-side at 30% 35%, rgba(14,165,233,.5), transparent 70%),
+    radial-gradient(closest-side at 70% 60%, rgba(192,38,211,.45), transparent 72%),
+    radial-gradient(closest-side at 45% 80%, rgba(234,179,8,.35), transparent 70%);
+}
+[data-theme="dark"] .hero-blobs::after {
+  background:
+    radial-gradient(closest-side at 60% 40%, rgba(22,163,74,.4), transparent 70%),
+    radial-gradient(closest-side at 30% 70%, rgba(37,99,235,.45), transparent 72%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .hero-blobs { display:none; }
+}
+
+/* Hero 大透镜（官方 demo 造型：可拖拽的圆形折射镜） */
+.lg-lens-demo {
+  position:absolute; z-index:5; display:grid; place-items:center;
+  width:clamp(220px, 24vw, 320px); height:clamp(220px, 24vw, 320px);
+  right:clamp(24px, 12vw, 220px); top:clamp(160px, 26vh, 260px);
+}
+.lg-lens-demo span { font-size:clamp(30px, 3.4vw, 44px); font-weight:700; letter-spacing:-.02em; color:var(--ink); pointer-events:none; }
+@media (max-width:900px) { .lg-lens-demo { display:none; } } /* 窄屏隐藏，避免遮挡文案 */
+
 /* 悬浮玻璃工具栏（个人空间侧栏 / 播放条）：折射由 JS 挂载 */
 .space-rail, .space-player, .player-bar, .page-nav {
   /* 占位：data-liquid-glass 挂载后 backdrop-filter 由内联样式接管 */
