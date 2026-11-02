@@ -9,6 +9,7 @@ class ArticleBody(BaseModel):
     summary: str = Field(default="", max_length=500)
     content: str = Field(default="", max_length=400000)
     date: str = Field(default="", max_length=10)
+    kind: str = Field(default="article", pattern="^(article|note)$")
     tags: list[str] = Field(default_factory=list, max_length=20)
 
 

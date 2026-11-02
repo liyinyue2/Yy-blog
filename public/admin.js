@@ -96,9 +96,9 @@
 
   /* ---------- 数据加载 ---------- */
   const loadAll = async () => {
-    const [stats, articles, categories, messages, subscribers, settings] = await Promise.all([
+    const [stats, articles, categories, messages, subscribers, settings, tags] = await Promise.all([
       api('/api/stats'), api('/api/admin/articles'), api('/api/categories'),
-      api('/api/admin/messages'), api('/api/admin/subscribers'), api('/api/settings')
+      api('/api/admin/messages'), api('/api/admin/subscribers'), api('/api/settings'), api('/api/tags')
     ]);
     if (!stats.ok || !articles.ok) { sessionStorage.removeItem('admin-access'); sessionStorage.removeItem('admin-refresh'); location.reload(); return; }
     const s = stats.data;
@@ -112,7 +112,7 @@
     $('f-category').innerHTML = categories.data.map(c => `<option value="${escapeHtml(c.slug)}">${escapeHtml(c.name)}（${c.article_count} 篇）</option>`).join('');
     $('article-rows').innerHTML = articles.data.length ? articles.data.map(a => `
       <tr>
-        <td>${escapeHtml(a.title)}<div class="muted">/post-${escapeHtml(a.slug)}.html</div></td>
+        <td>${escapeHtml(a.title)}<div class="muted">/post-${escapeHtml(a.slug)}.html${a.kind === 'note' ? ' · 技术笔记' : ''}</div></td>
         <td>${escapeHtml(a.category_name)}</td><td>${escapeHtml(a.date)}</td><td>${a.views}</td>
         <td class="actions">
           <button type="button" data-edit="${escapeHtml(a.slug)}">编辑</button>
@@ -152,6 +152,15 @@
       ? subscribers.data.map(u => `<tr><td>${u.id}</td><td>${escapeHtml(u.email)}</td><td class="muted">${escapeHtml(u.created_at)}</td></tr>`).join('')
       : '<tr><td colspan="3" class="muted">还没有订阅者</td></tr>';
 
+    // 标签
+    $('tag-list').innerHTML = tags.data.length ? tags.data.map(t => `
+      <div class="msg-item" style="display:flex; align-items:center; gap:12px; padding:12px 16px;">
+        <b>${escapeHtml(t.name)}</b><span class="muted">${t.count} 个关联</span>
+        <span style="margin-left:auto;">
+          <button type="button" class="danger" data-del-tag="${t.id}" data-tag-name="${escapeHtml(t.name)}">删除</button>
+        </span>
+      </div>`).join('') : '<p class="list-empty">还没有标签。保存文章时填写标签会自动创建。</p>';
+
     // 设置
     for (const [key, value] of Object.entries(settings)) {
       const el = $('s-' + key);
@@ -161,6 +170,23 @@
     // 工作台 / 音乐 / 网盘
     loadWorkspace(); loadMusic(); loadCloud();
   };
+
+  /* ---------- 标签管理 ---------- */
+  $('t-create').addEventListener('click', async () => {
+    const name = $('t-name').value.trim();
+    if (!name) { $('t-note').textContent = '请输入标签名。'; return; }
+    const res = await api('/api/admin/tags', { method: 'POST', body: JSON.stringify({ name }) });
+    $('t-note').classList.toggle('is-error', !res.ok);
+    $('t-note').textContent = res.ok ? `已创建「${res.data.name}」。` : apiError(res.data, '创建失败');
+    if (res.ok) { $('t-name').value = ''; loadAll(); }
+  });
+  $('tag-list').addEventListener('click', async e => {
+    const btn = e.target.closest('[data-del-tag]');
+    if (!btn) return;
+    if (!confirm(`确定删除标签「${btn.dataset.tagName}」？将同时解除所有关联。`)) return;
+    const res = await api('/api/admin/tags/' + btn.dataset.delTag, { method: 'DELETE' });
+    if (res.ok) loadAll();
+  });
 
   /* ---------- Word / PDF 导入 ---------- */
   $('import-btn').addEventListener('click', () => $('f-import').click());
@@ -212,6 +238,7 @@
       editingSlug = a.slug;
       $('f-slug').value = a.slug; $('f-title').value = a.title;
       $('f-category').value = a.category_slug; $('f-date').value = a.published_at;
+      $('f-kind').value = a.kind || 'article'; $('f-tags').value = (a.tags || []).join(', ');
       $('f-summary').value = a.summary; $('f-content').value = a.content;
       $('editor-note').textContent = `正在编辑：${a.title}`;
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -232,7 +259,9 @@
       const payload = {
         slug: $('f-slug').value.trim(), title: $('f-title').value.trim(),
         category: $('f-category').value, date: $('f-date').value.trim(),
-        summary: $('f-summary').value.trim(), content: $('f-content').value
+        summary: $('f-summary').value.trim(), content: $('f-content').value,
+        kind: $('f-kind').value,
+        tags: $('f-tags').value.split(/[,，]/).map(t => t.trim()).filter(Boolean)
       };
       const res = editingSlug
         ? await api('/api/admin/articles/' + encodeURIComponent(editingSlug), { method: 'PUT', body: JSON.stringify(payload) })
@@ -253,7 +282,8 @@
 
   $('f-reset').addEventListener('click', () => {
     editingSlug = null;
-    ['f-slug', 'f-title', 'f-date', 'f-summary', 'f-content'].forEach(id => { $(id).value = ''; });
+    ['f-slug', 'f-title', 'f-date', 'f-summary', 'f-content', 'f-tags'].forEach(id => { $(id).value = ''; });
+    $('f-kind').value = 'article';
     $('editor-note').textContent = '新建模式：填写后点击保存文章。';
   });
 

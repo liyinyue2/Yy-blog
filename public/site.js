@@ -76,17 +76,19 @@
         const filters = document.getElementById('article-filters');
         const searchInput = document.getElementById('article-search');
         let activeCategory = decodeURIComponent((window.location.hash || '').replace('#', '')) || 'all';
+        let activeKind = 'all';
+        const kindBadge = k => k === 'note' ? '<span class="article-tag" style="color:var(--accent)">笔记</span>' : '';
         const renderCards = list => {
           articleList.innerHTML = list.length ? list.map(a => `
             <article class="article-card" data-category="${escapeHtml(a.category_slug)}">
               <div>
-                <div class="article-meta"><span class="article-tag">${escapeHtml(a.category_name)}</span><time>${escapeHtml(a.date)}</time></div>
+                <div class="article-meta"><span class="article-tag">${escapeHtml(a.category_name)}</span>${kindBadge(a.kind)}<time>${escapeHtml(a.date)}</time></div>
                 <h3>${escapeHtml(a.title)}</h3>
                 <p>${escapeHtml(a.summary)}</p>
               </div>
               <a class="read-link" href="/post-${escapeHtml(a.slug)}.html">阅读全文 <span>↗</span></a>
             </article>`).join('')
-            : '<p class="list-empty">没有符合条件的文章，换个筛选条件试试。</p>';
+            : `<p class="list-empty">${activeKind === 'note' ? '还没有技术笔记。' : '没有符合条件的文章，换个筛选条件试试。'}</p>`;
         };
         const syncUrl = () => {
           history.replaceState(null, '', activeCategory === 'all' ? '/articles.html' : '/articles.html#' + activeCategory);
@@ -100,7 +102,7 @@
         (async () => {
           try {
             const [articles, categories] = await Promise.all([
-              fetch('/api/articles').then(r => r.json()),
+              fetch('/api/articles' + (activeKind !== 'all' ? '?kind=' + activeKind : '')).then(r => r.json()),
               fetch('/api/categories').then(r => r.json())
             ]);
             renderCards(articles);
@@ -117,6 +119,19 @@
           }
         })();
 
+        // 类型切换（全部/文章/技术笔记）：服务端筛选，重新拉列表
+        document.querySelectorAll('#kind-filters .topic-chip').forEach(chip => chip.addEventListener('click', async () => {
+          activeKind = chip.dataset.kind;
+          document.querySelectorAll('#kind-filters .topic-chip').forEach(c =>
+            c.classList.toggle('is-active', c === chip));
+          activeCategory = 'all'; syncUrl();
+          try {
+            const list = await fetch('/api/articles' + (activeKind !== 'all' ? '?kind=' + activeKind : '')).then(r => r.json());
+            renderCards(list);
+            applyFilter();
+          } catch { /* 保持现有内容 */ }
+        }));
+
         // 搜索（防抖 300ms，搜索时清空分类筛选）
         if (searchInput) {
           let timer;
@@ -127,7 +142,7 @@
               activeCategory = 'all';
               syncUrl();
               try {
-                const list = await fetch('/api/articles' + (q ? '?q=' + encodeURIComponent(q) : '')).then(r => r.json());
+                const list = await fetch('/api/articles' + (q ? '?q=' + encodeURIComponent(q) : '') + (activeKind !== 'all' ? (q ? '&' : '?') + 'kind=' + activeKind : '')).then(r => r.json());
                 renderCards(list);
                 applyFilter();
               } catch { /* 保持现有内容 */ }

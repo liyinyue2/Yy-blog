@@ -29,12 +29,15 @@ DEFAULT_SETTINGS = {
 }
 
 
-def list_articles(q: str = "", category: str = "", tag: str = "") -> list[dict]:
+def list_articles(q: str = "", category: str = "", tag: str = "", kind: str = "") -> list[dict]:
     conn = db.conn()
-    sql = """SELECT a.id, a.slug, a.title, a.summary, a.published_at, a.views,
+    sql = """SELECT a.id, a.slug, a.title, a.summary, a.published_at, a.views, a.kind,
                     c.slug AS category_slug, c.name AS category_name
              FROM articles a JOIN categories c ON c.id = a.category_id WHERE 1=1"""
     params: list = []
+    if kind in ("article", "note"):
+        sql += " AND a.kind = ?"
+        params.append(kind)
     if category:
         sql += " AND c.slug = ?"
         params.append(category[:64])
@@ -143,7 +146,7 @@ def update_settings(data: dict, user: str, ip: str) -> dict:
 
 def admin_list_articles() -> list[dict]:
     rows = [dict(r) for r in db.conn().execute(
-        """SELECT a.id, a.slug, a.title, a.summary, a.published_at, a.views,
+        """SELECT a.id, a.slug, a.title, a.summary, a.published_at, a.views, a.kind,
                   c.slug AS category_slug, c.name AS category_name
            FROM articles a JOIN categories c ON c.id=a.category_id ORDER BY a.published_at DESC""")]
     for r in rows:
@@ -221,6 +224,7 @@ def save_article(old_slug: str | None, data, user: str, ip: str) -> dict:
     summary = (data.summary or "").strip()[:300]
     content = sanitize_html((data.content or "").strip()[:300000])
     date = (data.date or datetime.now().strftime("%Y-%m-%d")).strip()[:10]
+    kind = data.kind if getattr(data, "kind", "article") in ("article", "note") else "article"
     tags = [t.strip()[:50] for t in (data.tags or [])[:20] if t.strip()]
 
     if not title:
@@ -253,16 +257,16 @@ def save_article(old_slug: str | None, data, user: str, ip: str) -> dict:
         if old_slug:
             cur = conn.execute(
                 """UPDATE articles SET slug=?, title=?, category_id=?, summary=?, content=?,
-                   published_at=?, updated_at=datetime('now','localtime') WHERE slug=?""",
-                (slug, title, cat["id"], summary, content, date, old_slug))
+                   published_at=?, kind=?, updated_at=datetime('now','localtime') WHERE slug=?""",
+                (slug, title, cat["id"], summary, content, date, kind, old_slug))
             if cur.rowcount == 0:
                 raise HTTPException(status_code=404, detail="文章不存在")
             article_id = conn.execute("SELECT id FROM articles WHERE slug=?", (slug,)).fetchone()["id"]
             conn.execute("DELETE FROM taggables WHERE entity_type='article' AND entity_id=?", (article_id,))
         else:
             cur = conn.execute(
-                "INSERT INTO articles (slug,title,category_id,summary,content,published_at) VALUES (?,?,?,?,?,?)",
-                (slug, title, cat["id"], summary, content, date))
+                "INSERT INTO articles (slug,title,category_id,summary,content,published_at,kind) VALUES (?,?,?,?,?,?,?)",
+                (slug, title, cat["id"], summary, content, date, kind))
             article_id = cur.lastrowid
         for tag in tags:
             # v2 统一标签体系：tags(name) + taggables(entity_type='article')

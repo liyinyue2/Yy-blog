@@ -239,8 +239,10 @@
         </div>
         <div class="row">
           <label>分类<select id="f-category"></select></label>
+          <label>类型<select id="f-kind"><option value="article">文章</option><option value="note">技术笔记</option></select></label>
           <label>发布日期<input id="f-date" placeholder="2026-11-01" /></label>
         </div>
+        <label>标签（逗号分隔，如：linux, 运维）<input id="f-tags" placeholder="linux, 运维" /></label>
         <label>摘要<textarea id="f-summary" class="short" placeholder="显示在文章列表的一句话"></textarea></label>
         <label>正文（HTML）<textarea id="f-content" placeholder="<h2>小节标题</h2><p>段落……</p>"></textarea></label>
         <div class="form-actions">
@@ -274,9 +276,17 @@
       </table>
     </section>
 
-    <!-- 内容管理：标签（占位，后端 API 已就绪，UI 后续版本提供） -->
+    <!-- 内容管理：标签 -->
     <section data-panel="tags" class="hidden">
-      <p class="admin-note">标签管理将在后续版本提供。统一标签体系的后端接口已就绪，当前可在文章编辑流程中使用。</p>
+      <div class="admin-form" style="max-width:420px;">
+        <label>新标签名称<input id="t-name" placeholder="如：linux、运维" /></label>
+        <div class="form-actions">
+          <button class="primary" id="t-create" type="button">创建标签</button>
+          <span class="admin-note" id="t-note"></span>
+        </div>
+      </div>
+      <p class="admin-note" style="margin:8px 0 12px;">标签挂在文章/笔记上后自动计数；删除标签会同时解除所有关联。</p>
+      <div id="tag-list"></div>
     </section>
 
     <!-- 内容管理：留言审核 -->

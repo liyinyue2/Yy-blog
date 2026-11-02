@@ -35,8 +35,8 @@ def post_page(post_path: str):
 
 # ---------- 公开只读 ----------
 @router.get("/api/articles")
-def articles(q: str = "", category: str = "", tag: str = ""):
-    return service.list_articles(q=q, category=category, tag=tag)
+def articles(q: str = "", category: str = "", tag: str = "", kind: str = ""):
+    return service.list_articles(q=q, category=category, tag=tag, kind=kind)
 
 
 @router.get("/api/articles/{slug}")

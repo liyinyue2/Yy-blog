@@ -190,6 +190,16 @@ def _ensure_track_visibility(conn) -> None:
         )
 
 
+def _ensure_article_kind(conn) -> None:
+    """v2.2 P1：articles.kind 字段幂等保障（article/note），启动自愈。"""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(articles)")}
+    if "kind" not in cols:
+        conn.execute(
+            "ALTER TABLE articles ADD COLUMN kind TEXT NOT NULL DEFAULT 'article'"
+            " CHECK (kind IN ('article', 'note'))"
+        )
+
+
 def run(quiet: bool = False) -> None:
     db.init()
     conn = db.conn()
@@ -205,6 +215,7 @@ def run(quiet: bool = False) -> None:
     for sql in MUSIC_MIGRATIONS:
         conn.execute(sql)
     _ensure_track_visibility(conn)
+    _ensure_article_kind(conn)
     for sql in INDEXES:
         conn.execute(sql)
     _seed(conn)
