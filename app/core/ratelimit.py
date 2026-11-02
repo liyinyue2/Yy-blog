@@ -41,11 +41,12 @@ def rate_limited(key: str, window_seconds: int, max_hits: int) -> bool:
 
 
 def client_ip(request) -> str:
-    """取客户端真实 IP（Nginx 反代场景优先 X-Real-IP）。"""
-    real = request.headers.get("X-Real-IP")
-    if real:
-        return real
-    fwd = request.headers.get("X-Forwarded-For")
-    if fwd:
-        return fwd.split(",")[0].strip()
+    """取客户端真实 IP。仅生产环境信任反代头，避免开发态伪造 X-Forwarded-For 绕过限流。"""
+    if settings.ENV == "production":
+        real = request.headers.get("X-Real-IP")
+        if real:
+            return real.split(",")[0].strip()
+        fwd = request.headers.get("X-Forwarded-For")
+        if fwd:
+            return fwd.split(",")[0].strip()
     return request.client.host if request.client else "-"

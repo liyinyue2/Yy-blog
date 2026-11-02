@@ -6,7 +6,6 @@
 """
 import uuid
 import zipfile
-from io import BytesIO
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
@@ -72,19 +71,6 @@ def _check_signature(ext: str, head: bytes) -> None:
     raise HTTPException(status_code=400, detail="文件内容与扩展名不符（MIME 签名校验失败）")
 
 
-def _check_zip_bomb(data_head: bytes, full_size: int, ext: str) -> None:
-    """ZIP 类文件解析前预检解压后总量；其余格式跳过。"""
-    if ext not in ("zip", "docx", "xlsx", "pptx"):
-        return
-    try:
-        with zipfile.ZipFile(BytesIO(data_head)) as zf:
-            total = sum(info.file_size for info in zf.infolist())
-            if total > MAX_ZIP_UNCOMPRESSED:
-                raise HTTPException(status_code=400, detail=f"压缩包解压后过大（{total // 1048576}MB），疑似炸弹构造")
-    except zipfile.BadZipFile:
-        pass  # 交由签名校验/下载端兜底
-
-
 @router.post("/admin/cloud/upload")
 async def cloud_upload(request: Request, file: UploadFile, user: dict = Depends(require_admin)):
     ip = client_ip(request)
@@ -116,8 +102,23 @@ async def cloud_upload(request: Request, file: UploadFile, user: dict = Depends(
         dest.unlink(missing_ok=True)
         raise HTTPException(status_code=500, detail="服务器写入失败")
 
-    _check_signature(ext, head[:16])
-    _check_zip_bomb(head, size, ext)
+    try:
+        _check_signature(ext, head[:16])
+        # ZIP 中央目录在文件尾，必须用完整落盘文件预检，不能只看文件头
+        if ext in ("zip", "docx", "xlsx", "pptx"):
+            try:
+                with zipfile.ZipFile(dest) as zf:
+                    total = sum(info.file_size for info in zf.infolist())
+                    if total > MAX_ZIP_UNCOMPRESSED:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"压缩包解压后过大（{total // 1048576}MB），疑似炸弹构造",
+                        )
+            except zipfile.BadZipFile:
+                raise HTTPException(status_code=400, detail="压缩包损坏或不是合法 ZIP")
+    except Exception:
+        dest.unlink(missing_ok=True)
+        raise
 
     conn = db.conn()
     cur = conn.execute(
@@ -151,11 +152,16 @@ def cloud_download(fid: int, user: dict = Depends(require_admin)):
         raise HTTPException(status_code=400, detail="非法文件路径")
     if not dest.exists():
         raise HTTPException(status_code=404, detail="文件已丢失")
-    safe_name = row["original_name"].replace('"', "")
+    # Content-Disposition：ASCII 回退名 + RFC 5987 UTF-8 编码名（中文文件名兼容）
+    from urllib.parse import quote
+    raw_name = row["original_name"].replace('"', "")
+    ascii_fallback = raw_name.encode("ascii", "ignore").decode() or "download"
+    encoded_name = quote(raw_name)
     return FileResponse(
         dest,
         media_type=row["mime"] or "application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{safe_name}"',
+        headers={"Content-Disposition":
+                 f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{encoded_name}',
                  "Cache-Control": "no-store"},
     )
 

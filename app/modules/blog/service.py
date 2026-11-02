@@ -37,23 +37,31 @@ def list_articles(q: str = "", category: str = "", tag: str = "") -> list[dict]:
     params: list = []
     if category:
         sql += " AND c.slug = ?"
-        params.append(category)
+        params.append(category[:64])
     if tag:
-        sql += """ AND a.id IN (SELECT at.article_id FROM article_tags at
-                   JOIN tags t ON t.id = at.tag_id WHERE t.slug = ? OR t.name = ?)"""
-        params += [tag, tag]
+        sql += """ AND a.id IN (SELECT g.entity_id FROM taggables g
+                   JOIN tags t ON t.id = g.tag_id
+                   WHERE g.entity_type='article' AND t.name = ?)"""
+        params.append(tag[:64])
     if q:
-        like = f"%{q}%"
-        sql += " AND (a.title LIKE ? OR a.summary LIKE ?)"
+        like = "%" + q[:80].replace("/", "//").replace("%", "/%").replace("_", "/_") + "%"
+        sql += " AND (a.title LIKE ? ESCAPE '/' OR a.summary LIKE ? ESCAPE '/')"
         params += [like, like]
     sql += " ORDER BY a.published_at DESC"
     rows = [dict(r) for r in conn.execute(sql, params)]
+    # 标签批量查询（1 次），替代逐文章 N+1 查询
+    tag_map: dict[int, list[str]] = {}
+    if rows:
+        ids = [r["id"] for r in rows]
+        marks = ",".join("?" * len(ids))
+        for tr in conn.execute(
+            f"""SELECT g.entity_id, t.name FROM tags t JOIN taggables g ON g.tag_id=t.id
+                WHERE g.entity_type='article' AND g.entity_id IN ({marks}) ORDER BY t.id""",
+            ids):
+            tag_map.setdefault(tr["entity_id"], []).append(tr["name"])
     for r in rows:
         r["date"] = fmt_date(r.pop("published_at"))
-        r["tags"] = [t["name"] for t in conn.execute(
-            """SELECT t.name FROM tags t JOIN taggables g ON g.tag_id=t.id
-               WHERE g.entity_type='article' AND g.entity_id=? ORDER BY t.id""",
-            (r["id"],))]
+        r["tags"] = tag_map.get(r["id"], [])
     return rows
 
 
@@ -65,7 +73,7 @@ def get_article(slug: str) -> dict:
     if not row:
         raise HTTPException(status_code=404, detail="文章不存在")
     article = dict(row)
-    article["date"] = fmt_date(article.pop("published_at"))
+    article["date"] = fmt_date(article["published_at"])
     article["tags"] = [t["name"] for t in conn.execute(
         """SELECT t.name FROM tags t JOIN taggables g ON g.tag_id=t.id
            WHERE g.entity_type='article' AND g.entity_id=? ORDER BY t.id""",
@@ -250,7 +258,7 @@ def save_article(old_slug: str | None, data, user: str, ip: str) -> dict:
             if cur.rowcount == 0:
                 raise HTTPException(status_code=404, detail="文章不存在")
             article_id = conn.execute("SELECT id FROM articles WHERE slug=?", (slug,)).fetchone()["id"]
-            conn.execute("DELETE FROM article_tags WHERE article_id=?", (article_id,))
+            conn.execute("DELETE FROM taggables WHERE entity_type='article' AND entity_id=?", (article_id,))
         else:
             cur = conn.execute(
                 "INSERT INTO articles (slug,title,category_id,summary,content,published_at) VALUES (?,?,?,?,?,?)",
@@ -279,10 +287,12 @@ def save_article(old_slug: str | None, data, user: str, ip: str) -> dict:
 
 def delete_article(slug: str, user: str, ip: str) -> dict:
     conn = db.conn()
-    cur = conn.execute("DELETE FROM articles WHERE slug=?", (slug,))
-    conn.commit()
-    if cur.rowcount == 0:
+    row = conn.execute("SELECT id FROM articles WHERE slug=?", (slug,)).fetchone()
+    if not row:
         raise HTTPException(status_code=404, detail="文章不存在")
+    conn.execute("DELETE FROM taggables WHERE entity_type='article' AND entity_id=?", (row["id"],))
+    conn.execute("DELETE FROM articles WHERE id=?", (row["id"],))
+    conn.commit()
     audit_log("article-delete", slug, ip, user=user)
     return {"ok": True, "deleted": slug}
 

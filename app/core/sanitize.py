@@ -27,8 +27,11 @@ class _HtmlWhitelister(HTMLParser):
             if tag in ALLOWED_ATTRS and name in ALLOWED_ATTRS[tag]:
                 v = (value or "").strip()
                 low = v.lower()
-                if not (v.startswith("/") or low.startswith("http://") or low.startswith("https://")):
-                    continue  # 拒绝 javascript: / data: 等危险协议
+                # 允许站内相对路径与 http(s)；拒绝 //evil.com 协议相对 URL 与 javascript:/data:
+                if v.startswith("//") or not (
+                    v.startswith("/") or low.startswith("http://") or low.startswith("https://")
+                ):
+                    continue
                 parts.append(f'{name}="{html_mod.escape(v, quote=True)}"')
         self.out.append(f"<{' '.join(parts)}>")
         self.stack.append(tag)

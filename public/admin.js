@@ -3,10 +3,39 @@
   const escapeHtml = value => String(value ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const apiError = (data, fallback) => {
+    if (typeof data?.error === 'string' && data.error) return data.error;
+    if (typeof data?.detail === 'string' && data.detail) return data.detail;
+    if (typeof data?.message === 'string' && data.message) return data.message;
+    return fallback;
+  };
   let access = sessionStorage.getItem('admin-access') || '';
   let refresh = sessionStorage.getItem('admin-refresh') || '';
   let editingSlug = null;
   let editingCategory = null;
+  const fmtSize = n => { n = +n || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B'; };
+  const fmtDur = s => { s = Math.round(+s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  // 不带 Content-Type 的鉴权请求（multipart 上传 / blob 下载用；浏览器自动设表单边界）
+  const authedFetch = async (path, options = {}) => {
+    const doFetch = () => fetch(path, {
+      ...options,
+      headers: { ...(access ? { Authorization: `Bearer ${access}` } : {}), ...(options.headers || {}) }
+    });
+    let res = await doFetch();
+    if (res.status === 401 && refresh && !path.startsWith('/api/auth/')) {
+      const r = await fetch('/api/auth/refresh', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh })
+      }).then(x => x.json()).catch(() => ({}));
+      if (r.access_token) {
+        access = r.access_token; refresh = r.refresh_token;
+        sessionStorage.setItem('admin-access', access);
+        sessionStorage.setItem('admin-refresh', refresh);
+        res = await doFetch();
+      }
+    }
+    return res;
+  };
 
   const api = async (path, options = {}) => {
     const doFetch = () => fetch(path, {
@@ -46,8 +75,7 @@
       sessionStorage.setItem('admin-refresh', refresh);
       gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll();
     } else {
-      $('token-note').textContent = res.detail === '用户名或密码错误' ? '用户名或密码错误。'
-        : (res.detail || '登录失败，请重试。');
+      $('token-note').textContent = apiError(res, '登录失败，请重试。');
     }
   };
   $('token-submit').addEventListener('click', doLogin);
@@ -59,7 +87,7 @@
     const btn = e.target.closest('[data-tab]');
     if (!btn) return;
     document.querySelectorAll('#admin-tabs button').forEach(b => b.classList.toggle('is-active', b === btn));
-    ['articles', 'categories', 'messages', 'subscribers', 'settings'].forEach(t =>
+    ['articles', 'categories', 'messages', 'subscribers', 'workspace', 'music', 'cloud', 'settings'].forEach(t =>
       $('tab-' + t).classList.toggle('hidden', t !== btn.dataset.tab));
   });
 
@@ -126,6 +154,9 @@
       const el = $('s-' + key);
       if (el && document.activeElement !== el) el.value = value;
     }
+
+    // 工作台 / 音乐 / 网盘
+    loadWorkspace(); loadMusic(); loadCloud();
   };
 
   /* ---------- Word / PDF 导入 ---------- */
@@ -157,7 +188,7 @@
         editingSlug = null;
         $('f-content').scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
-        note.textContent = res.data.error || '导入失败，请检查文件格式。';
+        note.textContent = apiError(res.data, '导入失败，请检查文件格式。');
       }
     } catch (err) {
       note.textContent = '导入失败：' + (err.message || '未知错误');
@@ -185,7 +216,7 @@
     if (delBtn) {
       if (!confirm(`确定删除文章「${delBtn.dataset.delete}」？此操作不可恢复。`)) return;
       const res = await api('/api/admin/articles/' + encodeURIComponent(delBtn.dataset.delete), { method: 'DELETE' });
-      $('editor-note').textContent = res.data.message || res.data.error || '';
+      $('editor-note').textContent = apiError(res.data, res.ok ? '' : '删除失败');
       if (editingSlug === delBtn.dataset.delete) $('f-reset').click();
       loadAll();
     }
@@ -210,7 +241,7 @@
         if (wasNew) $('f-reset').click();
         loadAll();
       } else {
-        $('editor-note').textContent = res.data.error || '保存失败，请重试。';
+        $('editor-note').textContent = apiError(res.data, '保存失败，请重试。');
       }
     } finally {
       btn.disabled = false;
@@ -237,8 +268,8 @@
     }
     if (delBtn) {
       if (!confirm(`确定删除分类「${delBtn.dataset.delCat}」？`)) return;
-      const res = await api('/api/admin/categories/' + delBtn.dataset.delCat, { method: 'DELETE' });
-      $('c-note').textContent = res.data.message || res.data.error || '';
+      const res = await api('/api/admin/categories/' + encodeURIComponent(delBtn.dataset.delCat), { method: 'DELETE' });
+      $('c-note').textContent = apiError(res.data, res.ok ? '' : '删除失败');
       loadAll();
     }
   });
@@ -247,12 +278,12 @@
     const payload = { name: $('c-name').value.trim(), description: $('c-desc').value.trim() };
     let res;
     if (editingCategory) {
-      res = await api('/api/admin/categories/' + editingCategory, { method: 'PUT', body: JSON.stringify(payload) });
+      res = await api('/api/admin/categories/' + encodeURIComponent(editingCategory), { method: 'PUT', body: JSON.stringify(payload) });
     } else {
       payload.slug = $('c-slug').value.trim();
       res = await api('/api/admin/categories', { method: 'POST', body: JSON.stringify(payload) });
     }
-    $('c-note').textContent = res.data.message || res.data.error || '';
+    $('c-note').textContent = apiError(res.data, res.ok ? '' : '保存失败');
     if (res.ok) {
       editingCategory = null;
       $('c-slug').disabled = false; $('c-slug').value = ''; $('c-name').value = ''; $('c-desc').value = '';
@@ -291,6 +322,201 @@
                   'social_github', 'social_wechat', 'social_qq', 'social_douyin'];
     const payload = Object.fromEntries(keys.map(k => [k, $('s-' + k).value]));
     const res = await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) });
-    $('s-note').textContent = res.data.message || res.data.error || '';
+    $('s-note').textContent = apiError(res.data, res.ok ? '' : '保存失败');
+  });
+
+  /* ---------- 工作台：笔记 / 待办 / 书签 ---------- */
+  let editingNote = null;
+  const loadWorkspace = async () => {
+    const [notes, todos, bookmarks] = await Promise.all([
+      api('/api/workspace/notes?limit=50'), api('/api/workspace/todos?limit=50'), api('/api/workspace/bookmarks?limit=50')
+    ]);
+    if (!notes.ok || !todos.ok || !bookmarks.ok) return;
+    $('note-list').innerHTML = notes.data.items.length ? notes.data.items.map(n => `
+      <div class="ws-item">
+        <div class="head"><b>${escapeHtml(n.title || '(无标题)')}</b><span class="meta">${escapeHtml(n.updated_at)}</span></div>
+        <p>${escapeHtml(n.content)}</p>
+        <div class="ops">
+          <button type="button" data-edit-note="${n.id}">编辑</button>
+          <button type="button" class="danger" data-del-note="${n.id}">删除</button>
+        </div>
+      </div>`).join('') : '<p class="admin-note">还没有笔记。</p>';
+    $('todo-list').innerHTML = todos.data.items.length ? todos.data.items.map(t => `
+      <div class="todo-item${t.done ? ' done' : ''}">
+        <input type="checkbox" data-todo-check="${t.id}" ${t.done ? 'checked' : ''} />
+        <span>${escapeHtml(t.content)}</span>
+        <span class="del"><button type="button" data-del-todo="${t.id}">删除</button></span>
+      </div>`).join('') : '<p class="admin-note">没有待办。</p>';
+    $('bookmark-list').innerHTML = bookmarks.data.items.length ? bookmarks.data.items.map(b => `
+      <div class="ws-item">
+        <div class="head"><b><a href="${escapeHtml(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.title)}</a></b><span class="meta">${escapeHtml(b.created_at)}</span></div>
+        <div class="ops"><button type="button" class="danger" data-del-bm="${b.id}">删除</button></div>
+      </div>`).join('') : '<p class="admin-note">没有书签。</p>';
+  };
+
+  const resetNoteForm = () => {
+    editingNote = null;
+    $('n-title').value = ''; $('n-content').value = '';
+    $('n-save').textContent = '保存笔记';
+  };
+  $('n-save').addEventListener('click', async () => {
+    const payload = { title: $('n-title').value, content: $('n-content').value };
+    const res = editingNote
+      ? await api('/api/workspace/notes/' + editingNote, { method: 'PUT', body: JSON.stringify(payload) })
+      : await api('/api/workspace/notes', { method: 'POST', body: JSON.stringify(payload) });
+    $('n-note').textContent = res.ok ? '已保存。' : apiError(res.data, '保存失败');
+    if (res.ok) { resetNoteForm(); loadWorkspace(); }
+  });
+  $('note-list').addEventListener('click', async e => {
+    const editBtn = e.target.closest('[data-edit-note]');
+    const delBtn = e.target.closest('[data-del-note]');
+    if (editBtn) {
+      const notes = await api('/api/workspace/notes?limit=50');
+      const n = (notes.data.items || []).find(x => x.id === +editBtn.dataset.editNote);
+      if (!n) return;
+      editingNote = n.id;
+      $('n-title').value = n.title; $('n-content').value = n.content;
+      $('n-save').textContent = '更新笔记';
+      $('n-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (delBtn) {
+      if (!confirm('确定删除这条笔记？此操作不可恢复。')) return;
+      await api('/api/workspace/notes/' + delBtn.dataset.delNote, { method: 'DELETE' });
+      if (editingNote === +delBtn.dataset.delNote) resetNoteForm();
+      loadWorkspace();
+    }
+  });
+
+  const addTodo = async () => {
+    const content = $('t-input').value.trim();
+    if (!content) return;
+    const res = await api('/api/workspace/todos', { method: 'POST', body: JSON.stringify({ content }) });
+    if (res.ok) { $('t-input').value = ''; loadWorkspace(); }
+  };
+  $('t-add').addEventListener('click', addTodo);
+  $('t-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
+  $('todo-list').addEventListener('click', async e => {
+    const chk = e.target.closest('[data-todo-check]');
+    const delBtn = e.target.closest('[data-del-todo]');
+    if (chk) {
+      const content = chk.closest('.todo-item').querySelector('span').textContent;
+      await api('/api/workspace/todos/' + chk.dataset.todoCheck, {
+        method: 'PUT', body: JSON.stringify({ content, done: chk.checked })
+      });
+      loadWorkspace();
+    }
+    if (delBtn) {
+      await api('/api/workspace/todos/' + delBtn.dataset.delTodo, { method: 'DELETE' });
+      loadWorkspace();
+    }
+  });
+
+  $('b-add').addEventListener('click', async () => {
+    const title = $('b-title').value.trim(), url = $('b-url').value.trim();
+    if (!title || !url) { $('b-note').textContent = '标题和网址都要填。'; return; }
+    const res = await api('/api/workspace/bookmarks', { method: 'POST', body: JSON.stringify({ title, url }) });
+    $('b-note').textContent = res.ok ? '已添加。' : apiError(res.data, '添加失败');
+    if (res.ok) { $('b-title').value = ''; $('b-url').value = ''; loadWorkspace(); }
+  });
+  $('bookmark-list').addEventListener('click', async e => {
+    const delBtn = e.target.closest('[data-del-bm]');
+    if (delBtn) {
+      await api('/api/workspace/bookmarks/' + delBtn.dataset.delBm, { method: 'DELETE' });
+      loadWorkspace();
+    }
+  });
+
+  /* ---------- 音乐管理 ---------- */
+  const loadMusic = async () => {
+    const res = await api('/api/music/tracks?limit=100');
+    if (!res.ok) return;
+    $('track-rows').innerHTML = res.data.length ? res.data.map(t => `
+      <tr>
+        <td><audio controls preload="none" src="/api/music/stream/${t.id}" style="height:32px;max-width:170px;"></audio></td>
+        <td>${escapeHtml(t.title || '(未知标题)')}<div class="muted">#${t.id}</div></td>
+        <td>${escapeHtml(t.artist || '—')}</td><td>${escapeHtml(t.album || '—')}</td>
+        <td>${fmtDur(t.duration)}</td><td class="muted">${escapeHtml(t.created_at)}</td>
+        <td class="actions"><button type="button" class="danger" data-del-track="${t.id}">删除</button></td>
+      </tr>`).join('') : '<tr><td colspan="7" class="muted">还没有曲目</td></tr>';
+  };
+  $('m-btn').addEventListener('click', () => $('m-file').click());
+  $('m-file').addEventListener('change', async () => {
+    const file = $('m-file').files[0];
+    if (!file) return;
+    $('m-btn').disabled = true;
+    $('m-note').textContent = `正在上传「${file.name}」…`;
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const res = await authedFetch('/api/admin/music/upload', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      $('m-note').textContent = res.ok ? '上传成功。' : apiError(data, '上传失败');
+      if (res.ok) loadMusic();
+    } finally { $('m-btn').disabled = false; $('m-file').value = ''; }
+  });
+  $('track-rows').addEventListener('click', async e => {
+    const delBtn = e.target.closest('[data-del-track]');
+    if (delBtn) {
+      if (!confirm('确定删除这首曲目？此操作不可恢复。')) return;
+      await api('/api/admin/music/tracks/' + delBtn.dataset.delTrack, { method: 'DELETE' });
+      loadMusic();
+    }
+  });
+
+  /* ---------- 网盘 ---------- */
+  const loadCloud = async () => {
+    const res = await api('/api/cloud/files?limit=100');
+    if (!res.ok) return;
+    $('cloud-rows').innerHTML = res.data.length ? res.data.map(f => `
+      <tr>
+        <td>${escapeHtml(f.original_name)}</td>
+        <td>${fmtSize(f.size)}</td><td class="muted">${escapeHtml(f.mime || '—')}</td>
+        <td class="muted">${escapeHtml(f.created_at)}</td>
+        <td class="actions">
+          <button type="button" data-dl-file="${f.id}">下载</button>
+          <button type="button" class="danger" data-del-file="${f.id}">删除</button>
+        </td>
+      </tr>`).join('') : '<tr><td colspan="5" class="muted">网盘还是空的</td></tr>';
+  };
+  $('c-btn').addEventListener('click', () => $('c-file').click());
+  $('c-file').addEventListener('change', async () => {
+    const file = $('c-file').files[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { $('c-note').textContent = '文件超过 20MB 限制。'; return; }
+    $('c-btn').disabled = true;
+    $('c-note').textContent = `正在上传「${file.name}」…`;
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const res = await authedFetch('/api/admin/cloud/upload', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      $('c-note').textContent = res.ok ? '上传成功。' : apiError(data, '上传失败');
+      if (res.ok) loadCloud();
+    } finally { $('c-btn').disabled = false; $('c-file').value = ''; }
+  });
+  $('cloud-rows').addEventListener('click', async e => {
+    const dlBtn = e.target.closest('[data-dl-file]');
+    const delBtn = e.target.closest('[data-del-file]');
+    if (dlBtn) {
+      // 下载接口需鉴权：blob 方式取回，再用临时链接触发浏览器保存
+      try {
+        const r = await authedFetch('/api/cloud/download/' + dlBtn.dataset.dlFile);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const blob = await r.blob();
+        const dispo = r.headers.get('content-disposition') || '';
+        let name = 'download';
+        const star = dispo.match(/filename\*=UTF-8''([^;]+)/);
+        const plain = dispo.match(/filename="([^"]+)"/);
+        if (star) name = decodeURIComponent(star[1]);
+        else if (plain) name = plain[1];
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name; a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) { $('c-note').textContent = '下载失败：' + err.message; }
+    }
+    if (delBtn) {
+      if (!confirm('确定删除这个文件？此操作不可恢复。')) return;
+      await api('/api/admin/cloud/files/' + delBtn.dataset.delFile, { method: 'DELETE' });
+      loadCloud();
+    }
   });
 })();

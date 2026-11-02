@@ -2,7 +2,7 @@
     (() => {
       'use strict';
 
-      const SOURCE_URL = 'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261030_025250_100df7b8-31fd-4614-aa4a-c1b7d5b6b273.png&w=1600&q=85';
+      const SOURCE_URL = '/kindred-hands.webp';
       const SRC = {
         LA: [0, .06, .47, .40],
         RA: [.53, .06, .47, .40],
@@ -209,11 +209,24 @@
 
       window.addEventListener('resize', resize, { passive: true });
       resize();
-      window.__render = render;
 
+      let raf = 0;
+      let pageVisible = true;
       function frame(now) {
+        raf = 0;
+        if (!pageVisible || document.hidden) return;
         render((now - firstTime) / 1000);
-        requestAnimationFrame(frame);
+        raf = requestAnimationFrame(frame);
       }
-      requestAnimationFrame(frame);
+      function kick() {
+        if (!raf && pageVisible && !document.hidden) raf = requestAnimationFrame(frame);
+      }
+      document.addEventListener('visibilitychange', kick);
+      if ('IntersectionObserver' in window && hero) {
+        new IntersectionObserver(entries => {
+          pageVisible = entries.some(e => e.isIntersecting);
+          if (pageVisible) kick();
+        }, { threshold: 0.01 }).observe(hero);
+      }
+      kick();
     })();

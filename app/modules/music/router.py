@@ -102,6 +102,10 @@ def stream_track(tid: int, request: Request):
     size = resolved.stat().st_size
     range_header = request.headers.get("Range")
     chunk_size = 256 * 1024
+    media_type = {
+        "mp3": "audio/mpeg", "flac": "audio/flac", "ogg": "audio/ogg",
+        "m4a": "audio/mp4", "wav": "audio/wav",
+    }.get(resolved.suffix.lower().lstrip("."), "audio/mpeg")
 
     def file_iter(start: int, end: int):
         with open(resolved, "rb") as f:
@@ -123,9 +127,9 @@ def stream_track(tid: int, request: Request):
             "Cache-Control": "no-store",
         }
         return StreamingResponse(file_iter(start, end), status_code=206,
-                                 media_type="audio/mpeg", headers=headers)
+                                 media_type=media_type, headers=headers)
     headers = {"Accept-Ranges": "bytes", "Content-Length": str(size), "Cache-Control": "no-store"}
-    return StreamingResponse(file_iter(0, size - 1), media_type="audio/mpeg", headers=headers)
+    return StreamingResponse(file_iter(0, size - 1), media_type=media_type, headers=headers)
 
 
 @router.post("/admin/music/upload")
@@ -171,10 +175,15 @@ async def upload_track(request: Request, file: UploadFile,
 
     title = (file.filename or "").rsplit(".", 1)[0][:200]
     conn = db.conn()
-    cur = conn.execute(
-        "INSERT INTO music.tracks (title, duration, file_path, created_at) VALUES (?,?,?,datetime('now','localtime'))",
-        (title, duration, str(dest)))
-    conn.commit()
+    try:
+        cur = conn.execute(
+            "INSERT INTO music.tracks (title, duration, file_path, created_at) VALUES (?,?,?,datetime('now','localtime'))",
+            (title, duration, str(dest)))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        dest.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail="保存曲目失败，请稍后再试")
     audit_log("music-upload", f"{uuid_name} ({size}B, {duration}s)", ip, user=user["username"])
     return {"ok": True, "id": cur.lastrowid, "title": title, "duration": duration, "size": size}
 

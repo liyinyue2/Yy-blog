@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # CORS：白名单，逗号分隔，禁止 *
     CORS_ORIGINS: str = "http://localhost:8081,http://localhost:3001,http://localhost:3000"
 
+    # HTTPS 就绪后设 ENABLE_HSTS=1，注入 Strict-Transport-Security
+    ENABLE_HSTS: bool = False
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]

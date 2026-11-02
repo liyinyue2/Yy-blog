@@ -69,6 +69,23 @@
   .setting-group { border-top: 1px dashed rgba(0,0,0,.1); padding-top: 14px; }
   .setting-group h3 { margin: 0 0 4px; font-size: 15px; }
   .setting-group .hint { font-size: 13px; color: #6b7280; margin: 0 0 10px; }
+  .ws-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 760px) { .ws-grid { grid-template-columns: 1fr; } }
+  .ws-item { border: 1px solid rgba(0,0,0,.08); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .ws-item .head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .ws-item .head b { font-weight: 600; }
+  .ws-item .head .meta { color: #9ca3af; font-size: 13px; }
+  .ws-item p { margin: 6px 0 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ws-item .ops { margin-top: 8px; display: flex; gap: 6px; }
+  .ws-item .ops button { border: none; background: none; cursor: pointer; font: inherit; padding: 2px 8px; border-radius: 8px; }
+  .ws-item .ops button:hover { background: rgba(0,0,0,.06); }
+  .ws-item .ops button.danger { color: #b91c1c; }
+  .todo-item { display: flex; align-items: center; gap: 10px; border: 1px solid rgba(0,0,0,.08); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; font-size: 14px; }
+  .todo-item.done span { text-decoration: line-through; color: #9ca3af; }
+  .todo-item input[type=checkbox] { width: 16px; height: 16px; flex: none; }
+  .todo-item .del { margin-left: auto; flex: none; }
+  .todo-item .del button { border: none; background: none; color: #b91c1c; cursor: pointer; font: inherit; padding: 2px 8px; border-radius: 8px; }
+  .todo-item .del button:hover { background: rgba(0,0,0,.06); }
 </style>
 </head>
 <body class="page-body">
@@ -99,6 +116,9 @@
     <button type="button" data-tab="categories">分类</button>
     <button type="button" data-tab="messages">留言</button>
     <button type="button" data-tab="subscribers">订阅者</button>
+    <button type="button" data-tab="workspace">工作台</button>
+    <button type="button" data-tab="music">音乐</button>
+    <button type="button" data-tab="cloud">网盘</button>
     <button type="button" data-tab="settings">站点设置</button>
   </div>
 
@@ -162,6 +182,76 @@
     <table class="admin-table">
       <thead><tr><th>#</th><th>邮箱</th><th>订阅时间</th></tr></thead>
       <tbody id="subscriber-rows"></tbody>
+    </table>
+  </section>
+
+  <!-- 工作台 -->
+  <section id="tab-workspace" class="hidden">
+    <div class="ws-grid">
+      <div>
+        <div class="admin-form">
+          <h3 style="margin:0;font-size:15px;">私人笔记</h3>
+          <label>标题<input id="n-title" placeholder="笔记标题" /></label>
+          <label>内容<textarea id="n-content" class="short" style="min-height:120px;"></textarea></label>
+          <div class="form-actions">
+            <button class="primary" id="n-save" type="button">保存笔记</button>
+            <span class="admin-note" id="n-note"></span>
+          </div>
+        </div>
+        <div id="note-list"></div>
+      </div>
+      <div>
+        <div class="admin-form">
+          <h3 style="margin:0;font-size:15px;">待办事项</h3>
+          <div class="form-actions">
+            <input id="t-input" placeholder="要做什么？" style="flex:1;font:inherit;padding:10px 12px;border:1px solid rgba(0,0,0,.14);border-radius:10px;" />
+            <button class="primary" id="t-add" type="button">添加</button>
+          </div>
+        </div>
+        <div id="todo-list"></div>
+        <div class="admin-form" style="margin-top:20px;">
+          <h3 style="margin:0;font-size:15px;">书签收藏</h3>
+          <div class="row">
+            <label>标题<input id="b-title" placeholder="GitHub" /></label>
+            <label>网址<input id="b-url" placeholder="https://..." /></label>
+          </div>
+          <div class="form-actions">
+            <button class="primary" id="b-add" type="button">添加书签</button>
+            <span class="admin-note" id="b-note"></span>
+          </div>
+        </div>
+        <div id="bookmark-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 音乐 -->
+  <section id="tab-music" class="hidden">
+    <div class="admin-form">
+      <div class="import-row" style="border-bottom:none;padding-bottom:0;">
+        <input type="file" id="m-file" accept=".mp3,.flac,.ogg,.wav,.m4a,.aac" hidden />
+        <button type="button" class="import-btn" id="m-btn">🎵 上传音频</button>
+        <span class="admin-note" id="m-note">支持 mp3 / flac / ogg / wav / m4a / aac，≤100MB。标题、歌手等信息从文件元数据自动读取。</span>
+      </div>
+    </div>
+    <table class="admin-table">
+      <thead><tr><th>试听</th><th>标题</th><th>歌手</th><th>专辑</th><th>时长</th><th>上传时间</th><th></th></tr></thead>
+      <tbody id="track-rows"></tbody>
+    </table>
+  </section>
+
+  <!-- 网盘 -->
+  <section id="tab-cloud" class="hidden">
+    <div class="admin-form">
+      <div class="import-row" style="border-bottom:none;padding-bottom:0;">
+        <input type="file" id="c-file" hidden />
+        <button type="button" class="import-btn" id="c-btn">📁 上传文件</button>
+        <span class="admin-note" id="c-note">单个 ≤20MB；下载需管理员登录，链接不对外。</span>
+      </div>
+    </div>
+    <table class="admin-table">
+      <thead><tr><th>文件名</th><th>大小</th><th>类型</th><th>上传时间</th><th></th></tr></thead>
+      <tbody id="cloud-rows"></tbody>
     </table>
   </section>
 

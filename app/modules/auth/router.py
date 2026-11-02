@@ -12,6 +12,8 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 # 登录失败限流：同 IP 15 分钟内错 5 次锁定（复用 v1.0 纪律）
 LIMIT_LOGIN_FAIL = (15 * 60, 5)
+# 刷新接口宽松限流：防滥用刷库（正常使用远低于此频率）
+LIMIT_REFRESH = (60, 30)
 
 
 class LoginBody(BaseModel):
@@ -53,6 +55,8 @@ def login(body: LoginBody, request: Request):
 @router.post("/refresh")
 def refresh(body: RefreshBody, request: Request):
     ip = client_ip(request)
+    if rate_hit(f"refresh:{ip}", *LIMIT_REFRESH):
+        raise HTTPException(status_code=429, detail="操作太频繁了，请稍后再试")
     payload = decode_token(body.refresh_token, "refresh")   # 无效/过期抛 401
     user = db.conn().execute(
         "SELECT id, username, password_hash, role FROM users WHERE username = ?",

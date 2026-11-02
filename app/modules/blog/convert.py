@@ -108,7 +108,9 @@ def convert_pdf(raw: bytes) -> tuple[str, str]:
             paragraphs.append(" ".join(buf))
     doc.close()
     paragraphs = [p for p in paragraphs if p.strip()]
-    if not title and paragraphs:
+    if not paragraphs:
+        raise HTTPException(status_code=400, detail="无法从该 PDF 中提取到文本内容（可能是扫描件或文件损坏）")
+    if not title:
         title = paragraphs[0][:60]
     content = "\n".join(f"<p>{html_mod.escape(p)}</p>" for p in paragraphs)
     return title.strip(), content

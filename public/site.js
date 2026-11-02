@@ -44,11 +44,12 @@
             body: JSON.stringify({ email })
           });
           const data = await res.json();
+          const err = (typeof data.error === 'string' && data.error) || (typeof data.detail === 'string' && data.detail);
           if (res.ok) {
             form.reset();
             formNote.textContent = data.message || '已订阅，下一封更新会寄到你的邮箱。';
           } else {
-            formNote.textContent = data.error || '订阅失败，请稍后再试。';
+            formNote.textContent = err || '订阅失败，请稍后再试。';
           }
         } catch {
           formNote.textContent = '网络异常，请稍后再试。';
@@ -215,7 +216,8 @@
               body: JSON.stringify(data)
             });
             const result = await res.json();
-            messageNote.textContent = res.ok ? (result.message || '留言成功！') : (result.error || '留言失败，请稍后再试。');
+            const err = (typeof result.error === 'string' && result.error) || (typeof result.detail === 'string' && result.detail);
+            messageNote.textContent = res.ok ? (result.message || '留言成功！') : (err || '留言失败，请稍后再试。');
             if (res.ok) { messageForm.reset(); loadMessages(); }
           } catch {
             messageNote.textContent = '网络异常，请稍后再试。';

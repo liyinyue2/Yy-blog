@@ -126,6 +126,8 @@ def admin_convert(body: ConvertBody, request: Request, user: dict = Depends(requ
         raise HTTPException(status_code=400, detail="文件解析失败，请确认文件未损坏后重试")
     if not title:
         title = stem
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="无法从该文件中提取到文本内容（可能是扫描件或空文档）")
     return {"ok": True, "title": title.strip() or stem, "content": content,
             "chars": len(re.sub(r"<[^>]+>", "", content))}
 
