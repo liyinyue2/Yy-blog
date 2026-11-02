@@ -279,13 +279,20 @@
         });
       }
 
-      /* ---------- 分段式标签：平滑移动的玻璃选中层 ---------- */
+      /* ---------- 分段式标签：平滑移动的 Liquid Glass 选中层 ---------- */
       const initSeg = container => {
         if (!container || container.dataset.segReady) return;
         container.dataset.segReady = '1';
         const pill = document.createElement('span');
         pill.className = 'seg-pill';
         pill.setAttribute('aria-hidden', 'true');
+        // 选中层本身是一块 Liquid Glass 透镜（折射 + 弹性平移）
+        pill.setAttribute('data-liquid-glass', '');
+        pill.setAttribute('data-lg-radius', '999');
+        pill.setAttribute('data-lg-bevel', '10');
+        pill.setAttribute('data-lg-scale', '28');
+        pill.setAttribute('data-lg-aberration', '5');
+        pill.setAttribute('data-lg-frost', '0.4');
         container.appendChild(pill);
         const move = () => {
           const chip = container.querySelector('.topic-chip.is-active');
@@ -310,4 +317,80 @@
         }).observe(container, { childList: true });
       };
       document.querySelectorAll('.tag-cloud[data-seg]').forEach(initSeg);
+
+      /* ---------- 导航 Liquid Glass 选中滑块：弹性平移 + 悬停跟随 + 跨页滑入 ---------- */
+      const NAV_LENS_KEY = 'nav-lens-prev';
+      const reducedMotion = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const initNavLens = nav => {
+        if (!nav || nav.dataset.lensReady) return;
+        const links = [...nav.querySelectorAll('.links a')];
+        if (!links.length) return;
+        nav.dataset.lensReady = '1';
+        const lens = document.createElement('span');
+        lens.className = 'nav-lens';
+        lens.setAttribute('aria-hidden', 'true');
+        lens.setAttribute('data-liquid-glass', '');
+        lens.setAttribute('data-lg-radius', '999');
+        lens.setAttribute('data-lg-bevel', '12');
+        lens.setAttribute('data-lg-scale', '36');
+        lens.setAttribute('data-lg-aberration', '6');
+        lens.setAttribute('data-lg-frost', '0.4');
+        nav.appendChild(lens);
+
+        let current = links.findIndex(a => a.classList.contains('is-current'));
+        if (current < 0) current = 0;
+
+        const PAD_X = 11, PAD_Y = 6; // 玻璃比链接大一圈（官方 app-chrome 滑块做法）
+        const place = (i, animate = true) => {
+          const chip = links[i];
+          if (!chip || !chip.offsetParent) { lens.style.opacity = '0'; return; }
+          const c = chip.getBoundingClientRect(), p = nav.getBoundingClientRect();
+          if (!animate) lens.style.transition = 'none';
+          lens.style.width = (c.width + PAD_X * 2) + 'px';
+          lens.style.height = (c.height + PAD_Y * 2) + 'px';
+          lens.style.transform = `translate(${c.left - p.left - PAD_X}px, ${c.top - p.top - PAD_Y}px)`;
+          lens.style.opacity = '1';
+          if (!animate) requestAnimationFrame(() => { lens.style.transition = ''; });
+        };
+
+        // 悬停跟随：玻璃追着指针跑；移出导航弹回选中项
+        if (!reducedMotion) {
+          links.forEach((a, i) => a.addEventListener('mouseenter', () => place(i)));
+          nav.addEventListener('mouseleave', () => place(current));
+        }
+        // 跨页动画：点击时记录目标项，新页面加载后玻璃从上一项位置弹过来
+        links.forEach((a, i) => a.addEventListener('click', () => {
+          try {
+            sessionStorage.setItem(NAV_LENS_KEY,
+              JSON.stringify({ index: i, ts: Date.now(), count: links.length }));
+          } catch {}
+        }));
+
+        if (window.LiquidGlass) LiquidGlass.scan(nav);
+
+        // 初始定位：若有跨页来源则从旧位置弹性滑入
+        let fromIndex = null;
+        try {
+          const prev = JSON.parse(sessionStorage.getItem(NAV_LENS_KEY) || 'null');
+          if (prev && Date.now() - prev.ts < 2500 && prev.count === links.length &&
+              prev.index !== current) fromIndex = prev.index;
+          sessionStorage.removeItem(NAV_LENS_KEY);
+        } catch {}
+        // settling：滑入动画进行中，禁止 fonts.ready / resize 的无动画重定位打断它
+        let settling = fromIndex != null && !reducedMotion;
+        const relocate = () => { if (!settling) place(current, false); };
+        if (settling) {
+          place(fromIndex, false);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            place(current);
+            setTimeout(() => { settling = false; place(current, false); }, 720);
+          }));
+        } else {
+          place(current, false);
+        }
+        if ('ResizeObserver' in window) new ResizeObserver(relocate).observe(nav);
+        if (document.fonts?.ready) document.fonts.ready.then(relocate);
+      };
+      document.querySelectorAll('nav').forEach(initNavLens);
     })();

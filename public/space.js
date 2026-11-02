@@ -86,8 +86,56 @@
       s.classList.toggle('hidden', s.dataset.panel !== name));
     document.querySelectorAll('.rail-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.nav === name));
+    moveRailLens(name);
     if (!loaded[name]) { loaded[name] = true; loadPanel(name); }
   };
+
+  /* ---------- 侧栏 Liquid Glass 选中滑块（垂直弹性平移） ---------- */
+  let moveRailLens = () => {};
+  const initRailLens = () => {
+    const nav = document.querySelector('.space-rail nav');
+    const btns = [...nav.querySelectorAll('.rail-btn')];
+    if (!btns.length || nav.dataset.lensReady) return;
+    nav.dataset.lensReady = '1';
+    const lens = document.createElement('span');
+    lens.className = 'rail-lens';
+    lens.setAttribute('aria-hidden', 'true');
+    lens.setAttribute('data-liquid-glass', '');
+    lens.setAttribute('data-lg-radius', '13');
+    lens.setAttribute('data-lg-bevel', '10');
+    lens.setAttribute('data-lg-scale', '24');
+    lens.setAttribute('data-lg-aberration', '4');
+    lens.setAttribute('data-lg-frost', '0.4');
+    nav.appendChild(lens);
+    const place = (name, animate = true) => {
+      const btn = btns.find(b => b.dataset.nav === name);
+      if (!btn || !btn.offsetParent) { lens.style.opacity = '0'; return; }
+      const c = btn.getBoundingClientRect(), p = nav.getBoundingClientRect();
+      if (!animate) lens.style.transition = 'none';
+      lens.style.width = c.width + 'px';
+      lens.style.height = c.height + 'px';
+      lens.style.transform = `translate(${c.left - p.left}px, ${c.top - p.top}px)`;
+      lens.style.opacity = '1';
+      if (!animate) requestAnimationFrame(() => { lens.style.transition = ''; });
+    };
+    moveRailLens = place;
+    // 悬停跟随 + 弹回选中项
+    const reduced = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) {
+      btns.forEach(b => b.addEventListener('mouseenter', () => place(b.dataset.nav)));
+      nav.addEventListener('mouseleave', () =>
+        place(btns.find(b => b.classList.contains('active'))?.dataset.nav || 'overview'));
+    }
+    if (window.LiquidGlass) LiquidGlass.scan(nav);
+    place(btns.find(b => b.classList.contains('active'))?.dataset.nav || 'overview', false);
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(() =>
+        place(btns.find(b => b.classList.contains('active'))?.dataset.nav || 'overview', false)
+      ).observe(nav);
+    }
+  };
+  initRailLens();
   document.querySelectorAll('.rail-btn').forEach(b =>
     b.addEventListener('click', () => { location.hash = b.dataset.nav; }));
   window.addEventListener('hashchange', () => showPanel(location.hash.slice(1)));

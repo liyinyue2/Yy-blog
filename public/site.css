@@ -42,6 +42,7 @@
       /* -- 动效（统一时长与 iOS 缓动）-- */
       --t-fast: 150ms; --t-base: 250ms; --t-slow: 400ms;
       --ease: cubic-bezier(.32,.72,0,1);
+      --ease-spring: cubic-bezier(.3,1.42,.42,1); /* 弹性过冲：选中滑块平移 */
 
       /* -- 字体 -- */
       --font-ui: Inter, "Noto Sans SC", system-ui, sans-serif;
@@ -579,12 +580,24 @@ a:focus-visible, button:focus-visible { border-radius: var(--r-s); }
 .tag-cloud[data-seg] { position: relative; display: flex; flex-wrap: wrap; gap: 8px; width: fit-content; max-width: 100%; }
 .tag-cloud[data-seg] .seg-pill {
   position: absolute; top: 0; left: 0; width: 0; height: 0;
-  border-radius: var(--r-pill); background: var(--ink);
-  transition: transform var(--t-base) var(--ease), width var(--t-base) var(--ease), height var(--t-base) var(--ease);
+  border-radius: var(--r-pill); background: var(--lg-tint, rgba(0,0,0,.05));
+  transition: transform .6s var(--ease-spring), width .6s var(--ease-spring),
+              height .6s var(--ease-spring);
   z-index: 0; will-change: transform, width; pointer-events: none;
 }
 .tag-cloud[data-seg] .topic-chip { position: relative; z-index: 1; }
 .tag-cloud[data-seg] .topic-chip.is-active {
-  background: transparent; border-color: transparent; color: var(--bg);
+  background: transparent; border-color: transparent; color: var(--ink); font-weight: 600;
 }
-.tag-cloud[data-seg] .topic-chip.is-active:hover { background: transparent; color: var(--bg); }
+.tag-cloud[data-seg] .topic-chip.is-active:hover { background: transparent; color: var(--ink); }
+
+/* ---------- 导航 Liquid Glass 选中滑块（弹性平移） ---------- */
+.nav-lens {
+  position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 0;
+  border-radius: 999px; opacity: 0; pointer-events: none;
+  will-change: transform, width, height;
+  transition: transform .62s var(--ease-spring), width .62s var(--ease-spring),
+              height .62s var(--ease-spring), opacity .25s ease;
+}
+.nav .links a, .page-nav .links a { position: relative; z-index: 1; }
+/* 选中项透过玻璃仍需可读：玻璃 tint 由 --lg-tint 提供 */
