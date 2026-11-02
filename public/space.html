@@ -11,27 +11,34 @@
 <link rel="stylesheet" href="/site.css" />
 <style>
   .space-shell { display:grid; grid-template-columns:auto minmax(0,1fr); min-height:100vh; }
-  .space-rail { position:sticky; top:0; height:100vh; width:64px; display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 0; border-right:1px solid var(--hairline); background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); transition:width var(--t-slow) var(--ease); overflow:hidden; }
-  .space-rail .rail-brand { display:flex; align-items:center; justify-content:center; flex:none; width:38px; height:38px; margin-bottom:10px; border-radius:12px; background:#111; color:#fff; font-weight:600; text-decoration:none; font-size:17px; }
-  .space-rail nav { display:flex; flex-direction:column; align-items:center; gap:6px; width:100%; }
+  .space-rail { position:sticky; top:0; height:100vh; width:64px; display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 0; border-right:1px solid var(--hairline); background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); transition:width .38s cubic-bezier(.32,.72,0,1); overflow:hidden; }
+  .space-rail .rail-brand { display:flex; align-items:center; justify-content:center; flex:none; width:38px; height:38px; margin-bottom:12px; border-radius:12px; background:#111; color:#fff; font-weight:600; text-decoration:none; font-size:17px; }
+  .space-rail nav { display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; }
   .rail-btn { display:flex; align-items:center; justify-content:center; flex:none; width:42px; height:42px; border:none; border-radius:13px; background:transparent; color:var(--ink-3,#86868b); cursor:pointer; transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
   .rail-btn:hover { background:rgba(0,0,0,.06); color:var(--ink); transform:translateY(-1px); }
   .rail-btn.active { background:#111; color:#fff; }
   .rail-btn .ic { width:20px; height:20px; flex:none; }
-  .rail-label { display:none; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* 标签：淡入 + 滑出动画（参考 Aceternity SidebarLink） */
+  .rail-label { display:inline-block; max-width:0; opacity:0; transform:translateX(-8px); font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:max-width .34s cubic-bezier(.32,.72,0,1), opacity .26s var(--ease) .06s, transform .26s var(--ease) .06s; }
+  .rail-user { display:flex; align-items:center; justify-content:center; gap:10px; padding:10px 0 2px; flex:none; }
+  .rail-avatar { display:flex; align-items:center; justify-content:center; flex:none; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.08); color:var(--ink); border:1px solid var(--hairline); }
+  .rail-avatar .ic { width:16px; height:16px; }
   .rail-toggle { margin-top:auto; }
-  .rail-toggle .ic { transition:transform var(--t-base) var(--ease); }
+  .rail-toggle .ic { transition:transform .38s cubic-bezier(.32,.72,0,1); }
   /* 展开态 */
-  .space-shell.rail-open .space-rail { width:200px; align-items:stretch; padding:14px 10px; }
-  .space-shell.rail-open .rail-brand { width:100%; justify-content:flex-start; padding:0 10px; gap:10px; }
+  .space-shell.rail-open .space-rail { width:240px; align-items:stretch; padding:16px 12px 14px; }
+  .space-shell.rail-open .rail-brand { width:100%; justify-content:flex-start; padding:0 8px; gap:10px; }
   .space-shell.rail-open nav { align-items:stretch; }
   .space-shell.rail-open .rail-btn { width:100%; justify-content:flex-start; padding:0 12px; gap:12px; }
-  .space-shell.rail-open .rail-label { display:inline; }
-  .space-shell.rail-open .rail-brand .rail-label { color:#fff; }
+  .space-shell.rail-open .rail-label { max-width:160px; opacity:1; transform:none; }
+  .space-shell.rail-open .rail-brand .rail-label { color:#fff; font-size:14.5px; }
+  .space-shell.rail-open .rail-user { justify-content:flex-start; padding:10px 4px 2px; }
   .space-shell.rail-open .rail-toggle .ic { transform:rotate(180deg); }
-  .space-shell.rail-open .space-player { left:200px; }
+  .space-shell.rail-open .space-player { left:240px; }
+  /* 主内容区：卡片式仪表盘（参考 Aceternity Dashboard 圆角卡） */
+  .space-main { min-width:0; display:flex; flex-direction:column; border-top-left-radius:20px; border-top:1px solid var(--hairline); border-left:1px solid var(--hairline); background:var(--glass-bg-strong); box-shadow:var(--shadow-1), inset 0 1px 0 var(--highlight); }
   .space-main { min-width:0; display:flex; flex-direction:column; }
-  .space-topbar { position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:14px; padding:14px 26px; border-bottom:1px solid var(--hairline); background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); }
+  .space-topbar { position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:14px; padding:14px 26px; border-bottom:1px solid var(--hairline); background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); border-radius:20px 0 0 0; }
   .space-search { position:relative; flex:1; max-width:520px; display:flex; align-items:center; }
   .space-search .ic { position:absolute; left:13px; width:16px; height:16px; color:var(--ink-3,#86868b); pointer-events:none; }
   .space-search input { width:100%; padding:10px 14px 10px 38px; font:inherit; font-size:14px; border:1px solid var(--hairline); border-radius:var(--r-pill); background:var(--glass-bg); outline:none; }
@@ -137,8 +144,9 @@
   @media (max-width:860px) {
     .space-shell { grid-template-columns:auto minmax(0,1fr); }
     .space-rail { width:56px; }
-    .space-shell.rail-open .space-rail { width:176px; }
-    .space-shell.rail-open .space-player { left:176px; }
+    .space-shell.rail-open .space-rail { width:200px; }
+    .space-shell.rail-open .space-player { left:200px; }
+    .space-main { border-top-left-radius:14px; }
     .ov-grid, .notes-grid { grid-template-columns:1fr; }
     .space-content { padding:22px 16px 120px; }
     .space-topbar { padding:12px 16px; }
@@ -170,6 +178,10 @@
       <button class="rail-btn" type="button" data-nav="music" title="音乐库" aria-label="音乐库"><svg class="ic"><use href="/icons.svg#i-music"/></svg><span class="rail-label">音乐库</span></button>
       <button class="rail-btn" type="button" data-nav="ai" title="AI 助手" aria-label="AI 助手"><svg class="ic"><use href="/icons.svg#i-sparkle"/></svg><span class="rail-label">AI 助手</span></button>
     </nav>
+    <div class="rail-user" id="rail-user">
+      <span class="rail-avatar"><svg class="ic"><use href="/icons.svg#i-user"/></svg></span>
+      <span class="rail-label">admin</span>
+    </div>
     <button class="rail-btn rail-toggle" type="button" id="rail-toggle" aria-expanded="false" title="展开侧栏" aria-label="展开侧栏"><svg class="ic"><use href="/icons.svg#i-arrow-right"/></svg><span class="rail-label">展开</span></button>
   </aside>
 
