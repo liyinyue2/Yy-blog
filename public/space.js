@@ -770,19 +770,39 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiSend(); }
   });
 
-  /* ---------- 侧栏展开 / 收起（状态记忆） ---------- */
+  /* ---------- 侧栏：悬停自动展开 + 点击固定（状态记忆） ---------- */
+  const railEl = document.querySelector('.space-rail');
   const railToggle = $('rail-toggle');
+  let railPinned = false;
+  try { railPinned = localStorage.getItem('space-rail-open') === '1'; } catch {}
+  let railHoverTimer = null;
   const setRail = open => {
+    if (railHoverTimer) { clearTimeout(railHoverTimer); railHoverTimer = null; }
     shell.classList.toggle('rail-open', open);
     railToggle.setAttribute('aria-expanded', String(open));
-    railToggle.title = open ? '收起侧栏' : '展开侧栏';
+    railToggle.title = open ? '固定收起侧栏' : '展开侧栏';
     railToggle.setAttribute('aria-label', railToggle.title);
     const lbl = railToggle.querySelector('.rail-label');
     if (lbl) lbl.textContent = open ? '收起' : '展开';
-    try { localStorage.setItem('space-rail-open', open ? '1' : '0'); } catch {}
   };
-  railToggle.addEventListener('click', () => setRail(!shell.classList.contains('rail-open')));
-  try { setRail(localStorage.getItem('space-rail-open') === '1'); } catch { setRail(false); }
+  railToggle.addEventListener('click', () => {
+    // 点击 = 切换固定状态：未固定 → 固定展开；已固定 → 取消固定并收回
+    railPinned = !railPinned;
+    try { localStorage.setItem('space-rail-open', railPinned ? '1' : '0'); } catch {}
+    setRail(railPinned);
+  });
+  // 桌面端（有鼠标悬停能力的设备）移入自动展开，移出回到固定状态
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    railEl.addEventListener('mouseenter', () => {
+      if (railPinned || shell.classList.contains('rail-open')) return;
+      railHoverTimer = setTimeout(() => { railHoverTimer = null; setRail(true); }, 160);
+    });
+    railEl.addEventListener('mouseleave', () => {
+      if (railHoverTimer) { clearTimeout(railHoverTimer); railHoverTimer = null; }
+      if (!railPinned) setRail(false);
+    });
+  }
+  setRail(railPinned);
 
   /* ---------- 启动 ---------- */
   const boot = () => {
