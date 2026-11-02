@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import DraggableLens from '../components/DraggableLens.vue'
+import DotsCanvas from '../components/DotsCanvas.vue'
 import SocialLinks from '../components/SocialLinks.vue'
 
 const copied = ref('')
@@ -13,6 +14,7 @@ const onCopied = label => {
 <template>
   <section class="hero">
     <div class="hero-blobs" aria-hidden="true"></div>
+    <DotsCanvas />
     <div class="copy">
       <h1><span class="muted">记录思考，</span><span>分享创造。</span></h1>
       <p class="subline">这是一个关于前端开发、UI设计与个人成长的自留地。</p>
