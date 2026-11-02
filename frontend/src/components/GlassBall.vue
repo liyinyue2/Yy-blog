@@ -19,7 +19,7 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 const ball = ref(null)
-const PAD_X = 7, PAD_Y = 4       // 球比项大一圈
+const PAD_X = 14, PAD_Y = 9       // 球比项大一圈（更大的玻璃按钮观感）
 const OVER_DRAG = 0.25           // rubber-band 阻力系数
 let ctrl = null
 let stopX = null, stopY = null
