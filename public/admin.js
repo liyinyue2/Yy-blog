@@ -559,14 +559,14 @@
   $('c-file').addEventListener('change', async () => {
     const file = $('c-file').files[0];
     if (!file) return;
-    if (file.size > 20 * 1024 * 1024) { $('c-note').textContent = '文件超过 20MB 限制。'; return; }
+    if (file.size > 20 * 1024 * 1024) { $('cl-note').textContent = '文件超过 20MB 限制。'; return; }
     $('c-btn').disabled = true;
-    $('c-note').textContent = `正在上传「${file.name}」…`;
+    $('cl-note').textContent = `正在上传「${file.name}」…`;
     try {
       const fd = new FormData(); fd.append('file', file);
       const res = await authedFetch('/api/admin/cloud/upload', { method: 'POST', body: fd });
       const data = await res.json().catch(() => ({}));
-      $('c-note').textContent = res.ok ? '上传成功。' : apiError(data, '上传失败');
+      $('cl-note').textContent = res.ok ? '上传成功。' : apiError(data, '上传失败');
       if (res.ok) loadCloud();
     } finally { $('c-btn').disabled = false; $('c-file').value = ''; }
   });
@@ -589,7 +589,7 @@
         const a = document.createElement('a');
         a.href = url; a.download = name; a.click();
         URL.revokeObjectURL(url);
-      } catch (err) { $('c-note').textContent = '下载失败：' + err.message; }
+      } catch (err) { $('cl-note').textContent = '下载失败：' + err.message; }
     }
     if (delBtn) {
       if (!confirm('确定删除这个文件？此操作不可恢复。')) return;

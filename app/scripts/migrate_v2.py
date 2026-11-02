@@ -176,6 +176,20 @@ def _seed(conn) -> None:
         )
 
 
+def _ensure_track_visibility(conn) -> None:
+    """v2.1：tracks.visibility 字段幂等保障。
+
+    单独的迁移脚本在进程被硬杀时可能随未 checkpoint 的 WAL 一起丢失，
+    因此在每次启动迁移中做条件 ALTER，保证字段必然存在（自愈）。
+    """
+    cols = {r[1] for r in conn.execute("PRAGMA music.table_info(tracks)")}
+    if "visibility" not in cols:
+        conn.execute(
+            "ALTER TABLE music.tracks ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'"
+            " CHECK (visibility IN ('public', 'private'))"
+        )
+
+
 def run(quiet: bool = False) -> None:
     db.init()
     conn = db.conn()
@@ -190,6 +204,7 @@ def run(quiet: bool = False) -> None:
         conn.execute(sql)
     for sql in MUSIC_MIGRATIONS:
         conn.execute(sql)
+    _ensure_track_visibility(conn)
     for sql in INDEXES:
         conn.execute(sql)
     _seed(conn)
