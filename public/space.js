@@ -248,6 +248,7 @@
   /* ---------- 云盘 ---------- */
   let cloudCache = [];
   let cloudQuery = '';
+  let cloudStarOnly = false;
   const renderCloud = () => {
     const q = cloudQuery.toLowerCase();
     const list = q ? cloudCache.filter(f => f.original_name.toLowerCase().includes(q)) : cloudCache;
@@ -262,11 +263,17 @@
       </div>`).join('') : '<p class="tool-note">没有匹配的文件。</p>';
   };
   const loadCloud = async () => {
-    const res = await api('/api/cloud/files?limit=100');
+    const res = await api('/api/cloud/files?limit=100' + (cloudStarOnly ? '&star=1' : ''));
     if (!res.ok) return;
     cloudCache = Array.isArray(res.data) ? res.data : [];
     renderCloud();
   };
+  $('cl-star-filter').addEventListener('click', () => {
+    cloudStarOnly = !cloudStarOnly;
+    $('cl-star-filter').style.borderColor = cloudStarOnly ? '#111' : '';
+    $('cl-star-filter').setAttribute('aria-pressed', String(cloudStarOnly));
+    loadCloud();
+  });
   $('cl-upload').addEventListener('click', () => $('cl-file').click());
   $('cl-file').addEventListener('change', async () => {
     const file = $('cl-file').files[0];

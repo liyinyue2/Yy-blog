@@ -10,6 +10,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from app.core.audit import audit_log
 from app.core.config import settings
@@ -131,12 +132,45 @@ async def cloud_upload(request: Request, file: UploadFile, user: dict = Depends(
 
 
 @router.get("/cloud/files")
-def list_files(limit: int = 50, offset: int = 0, user: dict = Depends(require_admin)):
+def list_files(limit: int = 50, offset: int = 0, q: str = "", star: int = -1,
+               user: dict = Depends(require_admin)):
+    """文件列表：q 文件名搜索；star=1 仅收藏 / star=0 仅未收藏 / 其余全部。"""
     limit = max(1, min(limit, 100))
-    rows = [dict(r) for r in db.conn().execute(
-        "SELECT id, original_name, size, mime, created_at FROM files ORDER BY id DESC LIMIT ? OFFSET ?",
-        (limit, max(0, offset)))]
+    sql = "SELECT id, original_name, size, mime, is_starred, created_at FROM files"
+    params: list = []
+    conds = []
+    if q.strip():
+        conds.append("original_name LIKE ?")
+        params.append(f"%{q.strip()}%")
+    if star in (0, 1):
+        conds.append("is_starred = ?")
+        params.append(star)
+    if conds:
+        sql += " WHERE " + " AND ".join(conds)
+    sql += " ORDER BY is_starred DESC, id DESC LIMIT ? OFFSET ?"
+    params += [limit, max(0, offset)]
+    rows = [dict(r) for r in db.conn().execute(sql, params)]
     return rows
+
+
+class StarBody(BaseModel):
+    is_starred: bool
+
+
+@router.patch("/admin/cloud/files/{fid}")
+def cloud_star(fid: int, body: StarBody, request: Request,
+               user: dict = Depends(require_admin)):
+    """切换文件收藏标记。"""
+    conn = db.conn()
+    row = conn.execute("SELECT id FROM files WHERE id = ?", (fid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    conn.execute("UPDATE files SET is_starred = ? WHERE id = ?",
+                 (1 if body.is_starred else 0, fid))
+    conn.commit()
+    audit_log("cloud-star", f"id={fid} starred={body.is_starred}",
+              client_ip(request), user=user["username"])
+    return {"ok": True, "id": fid, "is_starred": 1 if body.is_starred else 0}
 
 
 @router.get("/cloud/download/{fid}")

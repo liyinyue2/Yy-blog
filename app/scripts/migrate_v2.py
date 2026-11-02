@@ -250,6 +250,13 @@ def _ensure_todo_fields(conn) -> None:
         conn.execute("ALTER TABLE workspace.todos ADD COLUMN priority INTEGER NOT NULL DEFAULT 0")
 
 
+def _ensure_file_starred(conn) -> None:
+    """v2.3 P4：files.is_starred 收藏标记，启动自愈。"""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(files)")}
+    if "is_starred" not in cols:
+        conn.execute("ALTER TABLE files ADD COLUMN is_starred INTEGER NOT NULL DEFAULT 0")
+
+
 def run(quiet: bool = False) -> None:
     db.init()
     conn = db.conn()
@@ -271,6 +278,7 @@ def run(quiet: bool = False) -> None:
     _ensure_track_visibility(conn)
     _ensure_article_kind(conn)
     _ensure_todo_fields(conn)
+    _ensure_file_starred(conn)
     for sql in INDEXES:
         conn.execute(sql)
     _seed(conn)
