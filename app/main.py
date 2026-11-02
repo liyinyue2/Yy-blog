@@ -14,6 +14,7 @@ from app.modules.blog.router import router as blog_router
 from app.modules.cloud.router import router as cloud_router
 from app.modules.music.router import router as music_router
 from app.modules.projects.router import router as projects_router
+from app.modules.space.router import router as space_router
 from app.modules.tags.router import router as tags_router
 from app.modules.workspace.router import router as workspace_router
 
@@ -106,6 +107,7 @@ app.include_router(tags_router)
 app.include_router(workspace_router)
 app.include_router(music_router)
 app.include_router(projects_router)
+app.include_router(space_router)
 app.include_router(cloud_router)
 
 

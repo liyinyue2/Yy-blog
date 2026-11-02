@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" /><link rel="icon" type="image/svg+xml" href="/y-mark.svg" />
+<title>我的空间 — Y's Blog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+<style>
+  .space-shell { display:grid; grid-template-columns:64px minmax(0,1fr); min-height:100vh; }
+  .space-rail { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 0; border-right:1px solid var(--hairline); background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); }
+  .space-rail .rail-brand { display:flex; align-items:center; justify-content:center; width:38px; height:38px; margin-bottom:10px; border-radius:12px; background:#111; color:#fff; font-weight:600; text-decoration:none; font-size:17px; }
+  .space-rail nav { display:flex; flex-direction:column; gap:6px; }
+  .rail-btn { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border:none; border-radius:13px; background:transparent; color:var(--ink-3,#86868b); cursor:pointer; transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
+  .rail-btn:hover { background:rgba(0,0,0,.06); color:var(--ink); transform:translateY(-1px); }
+  .rail-btn.active { background:#111; color:#fff; }
+  .rail-btn .ic { width:20px; height:20px; }
+  .space-main { min-width:0; display:flex; flex-direction:column; }
+  .space-topbar { position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:14px; padding:14px 26px; border-bottom:1px solid var(--hairline); background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); }
+  .space-search { position:relative; flex:1; max-width:520px; display:flex; align-items:center; }
+  .space-search .ic { position:absolute; left:13px; width:16px; height:16px; color:var(--ink-3,#86868b); pointer-events:none; }
+  .space-search input { width:100%; padding:10px 14px 10px 38px; font:inherit; font-size:14px; border:1px solid var(--hairline); border-radius:var(--r-pill); background:var(--glass-bg); outline:none; }
+  .space-search input:focus-visible { border-color:var(--ink); }
+  .space-user { margin-left:auto; font-size:13px; color:var(--sub); }
+  .glass-button { font:inherit; font-size:13px; padding:8px 16px; border:1px solid var(--hairline); border-radius:var(--r-pill); background:var(--glass-bg); cursor:pointer; }
+  .glass-button:hover { border-color:var(--ink); }
+  .glass-button.primary { background:#111; color:#fff; border-color:#111; }
+  .glass-button:disabled { opacity:.5; cursor:wait; }
+  .space-search-results { position:absolute; z-index:50; top:60px; left:26px; right:26px; max-width:560px; max-height:60vh; overflow:auto; border:1px solid var(--hairline); border-radius:var(--r-l); padding:14px; background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); box-shadow:var(--shadow-2), inset 0 1px 0 var(--highlight); }
+  .space-search-results .sr-group { margin-bottom:12px; }
+  .space-search-results .sr-label { font-size:12px; color:var(--ink-3,#86868b); margin-bottom:6px; letter-spacing:.04em; }
+  .space-search-results a, .space-search-results .sr-item { display:block; padding:7px 10px; border-radius:10px; font-size:14px; color:var(--ink); text-decoration:none; cursor:pointer; }
+  .space-search-results a:hover, .space-search-results .sr-item:hover { background:rgba(0,0,0,.05); }
+  .space-content { flex:1; padding:30px 26px 110px; }
+  .space-content section > h2 { margin:0 0 6px; font-size:24px; }
+  .space-section-sub { color:var(--sub); font-size:13.5px; margin:0 0 26px; }
+  .ov-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:22px; align-items:start; }
+  .glass-card { border:1px solid var(--hairline); border-radius:var(--r-m); padding:20px 22px; background:var(--glass-bg); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); box-shadow:var(--shadow-1), inset 0 1px 0 var(--highlight); margin-bottom:20px; }
+  .glass-card h3 { margin:0 0 14px; font-size:15px; }
+  .stat-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:12px; margin-bottom:22px; }
+  .stat-tile { border:1px solid var(--hairline); border-radius:var(--r-m); padding:14px 16px; background:var(--glass-bg); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); box-shadow:var(--shadow-1), inset 0 1px 0 var(--highlight); }
+  .stat-tile b { display:block; font-size:22px; }
+  .stat-tile span { font-size:12.5px; color:var(--sub); }
+  .todo-row { display:flex; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid rgba(0,0,0,.05); font-size:14px; }
+  .todo-row:last-child { border-bottom:none; }
+  .todo-row.done .todo-text { text-decoration:line-through; color:var(--ink-3,#86868b); }
+  .todo-row input[type=checkbox] { width:16px; height:16px; flex:none; }
+  .todo-text { flex:1; overflow-wrap:anywhere; }
+  .todo-due { font-size:12px; color:var(--ink-3,#86868b); flex:none; }
+  .todo-due.overdue { color:#b91c1c; font-weight:600; }
+  .prio-dot { flex:none; width:8px; height:8px; border-radius:50%; }
+  .prio-1 { background:#f59e0b; } .prio-2 { background:#b91c1c; }
+  .todo-form { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .todo-form input[type=text] { flex:1; min-width:160px; font:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--hairline); border-radius:10px; background:var(--glass-bg); }
+  .todo-form input[type=date], .todo-form select { font:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--hairline); border-radius:10px; background:var(--glass-bg); }
+  .icon-btn { border:none; background:none; cursor:pointer; font:inherit; padding:3px 7px; border-radius:8px; color:var(--ink-3,#86868b); display:inline-flex; align-items:center; }
+  .icon-btn:hover { background:rgba(0,0,0,.06); color:var(--ink); }
+  .icon-btn.danger:hover { color:#b91c1c; }
+  .icon-btn .ic { width:15px; height:15px; }
+  /* 笔记 */
+  .notes-grid { display:grid; grid-template-columns:300px minmax(0,1fr); gap:20px; align-items:start; }
+  .notes-list { max-height:70vh; overflow:auto; }
+  .note-item { padding:11px 13px; border-radius:12px; cursor:pointer; border:1px solid transparent; }
+  .note-item:hover { background:rgba(0,0,0,.04); }
+  .note-item.active { border-color:var(--hairline); background:var(--glass-bg-strong); box-shadow:var(--shadow-1); }
+  .note-item b { display:block; font-size:14px; font-weight:500; }
+  .note-item span { font-size:12px; color:var(--ink-3,#86868b); }
+  .note-editor label { display:grid; gap:6px; font-size:13px; color:var(--sub); margin-bottom:12px; }
+  .note-editor input, .note-editor textarea { font:inherit; padding:10px 12px; border:1px solid var(--hairline); border-radius:10px; background:var(--glass-bg); }
+  .note-editor textarea { min-height:320px; line-height:1.7; resize:vertical; }
+  .editor-actions { display:flex; gap:10px; align-items:center; }
+  /* 云盘 */
+  .file-row { display:flex; align-items:center; gap:12px; padding:11px 6px; border-bottom:1px solid rgba(0,0,0,.05); font-size:14px; }
+  .file-row:last-child { border-bottom:none; }
+  .file-name { flex:1; overflow-wrap:anywhere; }
+  .file-meta { color:var(--ink-3,#86868b); font-size:12.5px; flex:none; }
+  .star-btn.active { color:#f59e0b; }
+  .star-btn.active .ic { fill:#f59e0b; }
+  /* 工具 */
+  .tools-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px; align-items:start; }
+  .tool-area { width:100%; min-height:110px; font:inherit; font-size:13.5px; padding:10px 12px; border:1px solid var(--hairline); border-radius:10px; background:var(--glass-bg); resize:vertical; }
+  .tool-out { width:100%; min-height:110px; font-family:ui-monospace,monospace; font-size:13px; padding:10px 12px; border:1px solid var(--hairline); border-radius:10px; background:rgba(0,0,0,.03); overflow-wrap:anywhere; margin-top:10px; }
+  .btn-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .tool-note { font-size:12.5px; color:var(--sub); min-height:16px; margin-top:6px; }
+  .pomo-wrap { display:flex; align-items:center; gap:22px; }
+  .pomo-ring { position:relative; width:150px; height:150px; flex:none; }
+  .pomo-ring svg { transform:rotate(-90deg); }
+  .pomo-ring .pomo-time { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:26px; font-weight:500; letter-spacing:.02em; }
+  .pomo-ring .pomo-time small { font-size:11px; color:var(--sub); font-weight:400; margin-top:2px; }
+  .pomo-form { display:grid; gap:10px; flex:1; }
+  .pomo-form label { display:grid; gap:5px; font-size:13px; color:var(--sub); }
+  .pomo-form input, .pomo-form select { font:inherit; padding:9px 12px; border:1px solid var(--hairline); border-radius:10px; background:var(--glass-bg); }
+  .pomo-ops { display:flex; gap:8px; }
+  .tool-divider { border:none; border-top:1px dashed rgba(0,0,0,.1); margin:20px 0; }
+  /* 音乐 */
+  .track-row { display:flex; align-items:center; gap:12px; padding:10px 6px; border-bottom:1px solid rgba(0,0,0,.05); font-size:14px; }
+  .track-row:last-child { border-bottom:none; }
+  .track-row.playing { color:var(--accent,#0a84ff); font-weight:500; }
+  .track-title { flex:1; overflow-wrap:anywhere; }
+  .track-meta { color:var(--ink-3,#86868b); font-size:12.5px; flex:none; }
+  /* 播放条 */
+  .space-player { position:fixed; z-index:60; left:64px; right:0; bottom:0; display:flex; align-items:center; gap:14px; padding:10px 26px; border-top:1px solid var(--hairline); background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); }
+  .space-player .np-title { flex:1; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .space-player input[type=range] { flex:2; accent-color:#111; }
+  .space-player .np-time { font-size:12px; color:var(--sub); flex:none; }
+  /* AI 占位 */
+  .ai-stub { padding:60px 20px; text-align:center; color:var(--sub); }
+  .hidden { display:none !important; }
+  @media (max-width:860px) {
+    .space-shell { grid-template-columns:56px minmax(0,1fr); }
+    .ov-grid, .notes-grid { grid-template-columns:1fr; }
+    .space-content { padding:22px 16px 120px; }
+    .space-topbar { padding:12px 16px; }
+    .space-search-results { left:16px; right:16px; }
+    .space-player { left:56px; padding:10px 16px; }
+    .pomo-wrap { flex-direction:column; }
+  }
+</style>
+</head>
+<body class="page-body">
+
+<div class="token-gate" id="space-gate">
+  <h1>我的空间</h1>
+  <p style="color:#6b7280;font-size:14px;">私人区域，请使用管理员账号登录。</p>
+  <input type="text" id="g-user" placeholder="用户名" autocomplete="username" />
+  <input type="password" id="g-pass" placeholder="密码" autocomplete="current-password" />
+  <button id="g-submit" type="button">进入空间</button>
+  <p class="admin-note" id="g-note"></p>
+</div>
+
+<div class="space-shell hidden" id="space-shell">
+  <aside class="space-rail">
+    <a class="rail-brand" href="/" aria-label="返回首页">Y</a>
+    <nav aria-label="空间模块">
+      <button class="rail-btn active" type="button" data-nav="overview" title="概览" aria-label="概览"><svg class="ic"><use href="/icons.svg#i-home"/></svg></button>
+      <button class="rail-btn" type="button" data-nav="notes" title="知识笔记" aria-label="知识笔记"><svg class="ic"><use href="/icons.svg#i-note"/></svg></button>
+      <button class="rail-btn" type="button" data-nav="cloud" title="云盘" aria-label="云盘"><svg class="ic"><use href="/icons.svg#i-folder"/></svg></button>
+      <button class="rail-btn" type="button" data-nav="tools" title="效率工具" aria-label="效率工具"><svg class="ic"><use href="/icons.svg#i-terminal"/></svg></button>
+      <button class="rail-btn" type="button" data-nav="music" title="音乐库" aria-label="音乐库"><svg class="ic"><use href="/icons.svg#i-music"/></svg></button>
+      <button class="rail-btn" type="button" data-nav="ai" title="AI 助手" aria-label="AI 助手"><svg class="ic"><use href="/icons.svg#i-sparkle"/></svg></button>
+    </nav>
+  </aside>
+
+  <div class="space-main">
+    <header class="space-topbar">
+      <div class="space-search">
+        <svg class="ic"><use href="/icons.svg#i-search"/></svg>
+        <input type="search" id="space-search-input" placeholder="搜索文章、笔记、项目、文件、音乐、待办…" aria-label="全局搜索" autocomplete="off" />
+      </div>
+      <span class="space-user" id="space-user"></span>
+      <button class="glass-button" id="space-logout" type="button">登出</button>
+    </header>
+    <div class="space-search-results hidden" id="space-search-results"></div>
+
+    <div class="space-content">
+      <!-- 概览 -->
+      <section data-panel="overview">
+        <h2 id="ov-greeting">你好</h2>
+        <p class="space-section-sub" id="ov-date"></p>
+        <div class="stat-row" id="ov-stats"></div>
+        <div class="ov-grid">
+          <div class="glass-card">
+            <h3>今日待办</h3>
+            <div class="todo-form">
+              <input type="text" id="ov-todo-input" placeholder="要做什么？" maxlength="500" />
+              <select id="ov-todo-priority" aria-label="优先级"><option value="0">普通</option><option value="1">重要</option><option value="2">紧急</option></select>
+              <input type="date" id="ov-todo-due" aria-label="到期日" />
+              <button class="glass-button primary" id="ov-todo-add" type="button">添加</button>
+            </div>
+            <div id="ov-todo-list"></div>
+          </div>
+          <div>
+            <div class="glass-card">
+              <h3>最近笔记</h3>
+              <div id="ov-notes"></div>
+            </div>
+            <div class="glass-card">
+              <h3>快速入口</h3>
+              <div class="btn-row" style="margin-top:0;">
+                <a class="glass-button" href="/yy-AviuuP3r.html" style="text-decoration:none;">后台管理</a>
+                <a class="glass-button" href="/projects.html" style="text-decoration:none;">项目中心</a>
+                <a class="glass-button" href="/music.html" style="text-decoration:none;">音乐电台</a>
+                <a class="glass-button" href="/" style="text-decoration:none;">回到首页</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 知识笔记 -->
+      <section data-panel="notes" class="hidden">
+        <h2>知识笔记</h2>
+        <p class="space-section-sub">私人的想法与摘录，只保存在自己的服务器上。</p>
+        <div class="notes-grid">
+          <div class="glass-card notes-list" id="notes-list"></div>
+          <div class="glass-card note-editor">
+            <label>标题<input id="ne-title" placeholder="笔记标题" maxlength="200" /></label>
+            <label>内容<textarea id="ne-content" placeholder="支持纯文本；保存后自动净化 HTML。"></textarea></label>
+            <div class="editor-actions">
+              <button class="glass-button primary" id="ne-save" type="button">保存笔记</button>
+              <button class="glass-button" id="ne-new" type="button">新建</button>
+              <button class="glass-button danger" id="ne-delete" type="button" style="color:#b91c1c;">删除</button>
+              <span class="admin-note" id="ne-note"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 云盘 -->
+      <section data-panel="cloud" class="hidden">
+        <h2>云盘</h2>
+        <p class="space-section-sub">私有文件保管箱，下载链接不对外。</p>
+        <div class="glass-card">
+          <div class="btn-row" style="margin-top:0;">
+            <input type="file" id="cl-file" hidden />
+            <button class="glass-button primary" id="cl-upload" type="button">上传文件</button>
+            <input type="search" id="cl-search" placeholder="搜索文件名…" style="flex:1;min-width:180px;font:inherit;font-size:14px;padding:9px 14px;border:1px solid var(--hairline);border-radius:var(--r-pill);background:var(--glass-bg);" />
+          </div>
+          <p class="tool-note" id="cl-note">单个 ≤ 20MB。</p>
+        </div>
+        <div class="glass-card" id="cl-list"></div>
+      </section>
+
+      <!-- 效率工具 -->
+      <section data-panel="tools" class="hidden">
+        <h2>效率工具</h2>
+        <p class="space-section-sub">专注计时与顺手的小工具，数据留在本机与服务端。</p>
+        <div class="tools-grid">
+          <div class="glass-card">
+            <h3>番茄钟</h3>
+            <div class="pomo-wrap">
+              <div class="pomo-ring">
+                <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
+                  <circle cx="75" cy="75" r="66" fill="none" stroke="rgba(0,0,0,.07)" stroke-width="9"/>
+                  <circle id="pomo-arc" cx="75" cy="75" r="66" fill="none" stroke="#0a84ff" stroke-width="9" stroke-linecap="round" stroke-dasharray="414.7" stroke-dashoffset="0"/>
+                </svg>
+                <div class="pomo-time"><span id="pomo-display">25:00</span><small id="pomo-state">准备开始</small></div>
+              </div>
+              <div class="pomo-form">
+                <label>做什么<input id="pomo-label" placeholder="如：写周报" maxlength="120" /></label>
+                <label>时长
+                  <select id="pomo-minutes"><option value="25">25 分钟</option><option value="45">45 分钟</option><option value="15">15 分钟</option><option value="5">5 分钟</option></select>
+                </label>
+                <div class="pomo-ops">
+                  <button class="glass-button primary" id="pomo-start" type="button">开始</button>
+                  <button class="glass-button" id="pomo-reset" type="button">重置</button>
+                </div>
+                <p class="tool-note" id="pomo-note"></p>
+              </div>
+            </div>
+            <hr class="tool-divider" />
+            <p class="tool-note" id="pomo-today">今日已完成 0 个番茄。</p>
+          </div>
+          <div class="glass-card">
+            <h3>JSON 工具</h3>
+            <textarea class="tool-area" id="json-in" placeholder='粘贴 JSON，例如 {"a":1}'></textarea>
+            <div class="btn-row">
+              <button class="glass-button" id="json-format" type="button">格式化</button>
+              <button class="glass-button" id="json-minify" type="button">压缩</button>
+              <button class="glass-button" id="json-copy" type="button">复制结果</button>
+            </div>
+            <div class="tool-out" id="json-out"></div>
+            <p class="tool-note" id="json-note"></p>
+          </div>
+          <div class="glass-card">
+            <h3>文本工具</h3>
+            <textarea class="tool-area" id="text-in" placeholder="粘贴文本…"></textarea>
+            <div class="btn-row">
+              <button class="glass-button" id="text-count" type="button">统计</button>
+              <button class="glass-button" id="text-upper" type="button">转大写</button>
+              <button class="glass-button" id="text-lower" type="button">转小写</button>
+              <button class="glass-button" id="text-trim" type="button">去空行</button>
+              <button class="glass-button" id="text-b64e" type="button">Base64 编码</button>
+              <button class="glass-button" id="text-b64d" type="button">Base64 解码</button>
+            </div>
+            <div class="tool-out" id="text-out"></div>
+          </div>
+          <div class="glass-card">
+            <h3>网络信息</h3>
+            <div class="tool-out" id="net-out">点击「查询」查看本次连接信息。</div>
+            <div class="btn-row"><button class="glass-button" id="net-check" type="button">查询</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 音乐库 -->
+      <section data-panel="music" class="hidden">
+        <h2>音乐库</h2>
+        <p class="space-section-sub">点击播放，底部播放条常驻。收藏与最近播放见播放列表。</p>
+        <div class="glass-card" id="music-list"></div>
+      </section>
+
+      <!-- AI 助手 -->
+      <section data-panel="ai" class="hidden">
+        <h2>AI 助手</h2>
+        <p class="space-section-sub">与自己的知识对话。</p>
+        <div class="glass-card" id="ai-root">
+          <div class="ai-stub">AI 助手正在接入中，稍后回来。</div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="space-player hidden" id="space-player">
+  <button class="icon-btn" id="np-prev" type="button" aria-label="上一首"><svg class="ic" style="width:18px;height:18px;"><use href="/icons.svg#i-skip-prev"/></svg></button>
+  <button class="icon-btn" id="np-toggle" type="button" aria-label="播放/暂停"><svg class="ic" style="width:20px;height:20px;"><use id="np-toggle-use" href="/icons.svg#i-play"/></svg></button>
+  <button class="icon-btn" id="np-next" type="button" aria-label="下一首"><svg class="ic" style="width:18px;height:18px;"><use href="/icons.svg#i-skip-next"/></svg></button>
+  <span class="np-title" id="np-title">未在播放</span>
+  <span class="np-time" id="np-cur">0:00</span>
+  <input type="range" id="np-seek" min="0" max="100" value="0" aria-label="播放进度" />
+  <span class="np-time" id="np-dur">0:00</span>
+</div>
+<audio id="np-audio" preload="none"></audio>
+
+<script src="/space.js"></script>
+</body>
+</html>

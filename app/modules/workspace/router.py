@@ -23,6 +23,8 @@ class NoteBody(BaseModel):
 class TodoBody(BaseModel):
     content: str = Field(min_length=1, max_length=500)
     done: bool = False
+    due: str = Field(default="", max_length=10)          # YYYY-MM-DD 或空
+    priority: int = Field(default=0, ge=0, le=2)          # 0 普通 / 1 重要 / 2 紧急
 
 
 class BookmarkBody(BaseModel):
@@ -42,6 +44,18 @@ def _check_url(url: str) -> str:
     if parsed.scheme not in ("http", "https"):
         raise HTTPException(status_code=400, detail="书签 URL 仅支持 http/https")
     return url
+
+
+def _validate_due(due: str) -> str:
+    from datetime import datetime
+    due = (due or "").strip()
+    if not due:
+        return ""
+    try:
+        datetime.strptime(due, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="due 需为 YYYY-MM-DD 格式或留空")
+    return due
 
 
 def _paginate(limit: int, offset: int) -> tuple[int, int]:
@@ -106,7 +120,7 @@ def list_todos(limit: int = 20, offset: int = 0, user: dict = Depends(require_ad
     limit, offset = _paginate(limit, offset)
     conn = db.conn()
     rows = [dict(r) for r in conn.execute(
-        "SELECT id, content, done, created_at FROM workspace.todos ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT id, content, done, due, priority, created_at FROM workspace.todos ORDER BY done ASC, priority DESC, id DESC LIMIT ? OFFSET ?",
         (limit, offset))]
     total = conn.execute("SELECT COUNT(*) n FROM workspace.todos").fetchone()["n"]
     return {"items": rows, "total": total, "limit": limit, "offset": offset}
@@ -115,9 +129,10 @@ def list_todos(limit: int = 20, offset: int = 0, user: dict = Depends(require_ad
 @router.post("/todos")
 def create_todo(body: TodoBody, request: Request, user: dict = Depends(require_admin)):
     conn = db.conn()
+    due = _validate_due(body.due)
     cur = conn.execute(
-        "INSERT INTO workspace.todos (content, done, created_at) VALUES (?,?,?)",
-        (body.content.strip()[:500], 1 if body.done else 0, _now()))
+        "INSERT INTO workspace.todos (content, done, due, priority, created_at) VALUES (?,?,?,?,?)",
+        (body.content.strip()[:500], 1 if body.done else 0, due, body.priority, _now()))
     conn.commit()
     audit_log("todo-create", f"id={cur.lastrowid}", client_ip(request), user=user["username"])
     return {"ok": True, "id": cur.lastrowid}
@@ -126,8 +141,9 @@ def create_todo(body: TodoBody, request: Request, user: dict = Depends(require_a
 @router.put("/todos/{tid}")
 def toggle_todo(tid: int, body: TodoBody, request: Request, user: dict = Depends(require_admin)):
     conn = db.conn()
-    cur = conn.execute("UPDATE workspace.todos SET content=?, done=? WHERE id=?",
-                       (body.content.strip()[:500], 1 if body.done else 0, tid))
+    due = _validate_due(body.due)
+    cur = conn.execute("UPDATE workspace.todos SET content=?, done=?, due=?, priority=? WHERE id=?",
+                       (body.content.strip()[:500], 1 if body.done else 0, due, body.priority, tid))
     conn.commit()
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="待办不存在")

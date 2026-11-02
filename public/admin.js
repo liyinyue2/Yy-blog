@@ -479,11 +479,13 @@
 
   /* ---------- 工作台：笔记 / 待办 / 书签 ---------- */
   let editingNote = null;
+  let todosCache = [];
   const loadWorkspace = async () => {
     const [notes, todos, bookmarks] = await Promise.all([
       api('/api/workspace/notes?limit=50'), api('/api/workspace/todos?limit=50'), api('/api/workspace/bookmarks?limit=50')
     ]);
     if (!notes.ok || !todos.ok || !bookmarks.ok) return;
+    todosCache = todos.data.items || [];
     $('note-list').innerHTML = notes.data.items.length ? notes.data.items.map(n => `
       <div class="ws-item">
         <div class="head"><b>${escapeHtml(n.title || '(无标题)')}</b><span class="meta">${escapeHtml(n.updated_at)}</span></div>
@@ -497,6 +499,7 @@
       <div class="todo-item${t.done ? ' done' : ''}">
         <input type="checkbox" data-todo-check="${t.id}" ${t.done ? 'checked' : ''} />
         <span>${escapeHtml(t.content)}</span>
+        ${t.due ? `<span class="muted" style="margin-left:auto;font-size:12px;">${escapeHtml(t.due)}</span>` : ''}
         <span class="del"><button type="button" data-del-todo="${t.id}">删除</button></span>
       </div>`).join('') : '<p class="admin-note">没有待办。</p>';
     $('bookmark-list').innerHTML = bookmarks.data.items.length ? bookmarks.data.items.map(b => `
@@ -551,9 +554,11 @@
     const chk = e.target.closest('[data-todo-check]');
     const delBtn = e.target.closest('[data-del-todo]');
     if (chk) {
-      const content = chk.closest('.todo-item').querySelector('span').textContent;
-      await api('/api/workspace/todos/' + chk.dataset.todoCheck, {
-        method: 'PUT', body: JSON.stringify({ content, done: chk.checked })
+      const t = todosCache.find(x => x.id === +chk.dataset.todoCheck);
+      if (!t) return;
+      await api('/api/workspace/todos/' + t.id, {
+        method: 'PUT',
+        body: JSON.stringify({ content: t.content, done: chk.checked, due: t.due || '', priority: t.priority || 0 })
       });
       loadWorkspace();
     }

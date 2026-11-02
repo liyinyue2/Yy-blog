@@ -118,6 +118,16 @@ PROJECT_MIGRATIONS = [
     "CREATE INDEX IF NOT EXISTS idx_project_logs_project ON project_logs(project_id)",
 ]
 
+POMODORO_MIGRATIONS = [
+    """CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        label TEXT DEFAULT '',
+        minutes INTEGER NOT NULL DEFAULT 25,
+        completed INTEGER NOT NULL DEFAULT 0,
+        started_at TEXT NOT NULL
+    )""",
+]
+
 WORKSPACE_MIGRATIONS = [
     """CREATE TABLE IF NOT EXISTS workspace.notes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -231,6 +241,15 @@ def _ensure_article_kind(conn) -> None:
         )
 
 
+def _ensure_todo_fields(conn) -> None:
+    """v2.3 P3：workspace.todos 增强字段（due 到期日 / priority 优先级），启动自愈。"""
+    cols = {r[1] for r in conn.execute("PRAGMA workspace.table_info(todos)")}
+    if "due" not in cols:
+        conn.execute("ALTER TABLE workspace.todos ADD COLUMN due TEXT NOT NULL DEFAULT ''")
+    if "priority" not in cols:
+        conn.execute("ALTER TABLE workspace.todos ADD COLUMN priority INTEGER NOT NULL DEFAULT 0")
+
+
 def run(quiet: bool = False) -> None:
     db.init()
     conn = db.conn()
@@ -247,8 +266,11 @@ def run(quiet: bool = False) -> None:
         conn.execute(sql)
     for sql in MUSIC_MIGRATIONS:
         conn.execute(sql)
+    for sql in POMODORO_MIGRATIONS:
+        conn.execute(sql)
     _ensure_track_visibility(conn)
     _ensure_article_kind(conn)
+    _ensure_todo_fields(conn)
     for sql in INDEXES:
         conn.execute(sql)
     _seed(conn)
