@@ -278,4 +278,36 @@
           }
         });
       }
+
+      /* ---------- 分段式标签：平滑移动的玻璃选中层 ---------- */
+      const initSeg = container => {
+        if (!container || container.dataset.segReady) return;
+        container.dataset.segReady = '1';
+        const pill = document.createElement('span');
+        pill.className = 'seg-pill';
+        pill.setAttribute('aria-hidden', 'true');
+        container.appendChild(pill);
+        const move = () => {
+          const chip = container.querySelector('.topic-chip.is-active');
+          if (!chip) { pill.style.opacity = '0'; return; }
+          pill.style.opacity = '1';
+          const c = chip.getBoundingClientRect(), p = container.getBoundingClientRect();
+          pill.style.width = c.width + 'px';
+          pill.style.height = c.height + 'px';
+          pill.style.transform = `translateX(${c.left - p.left}px) translateY(${c.top - p.top}px)`;
+        };
+        container.addEventListener('click', e => {
+          if (e.target.closest('.topic-chip')) requestAnimationFrame(move);
+        });
+        if ('ResizeObserver' in window) new ResizeObserver(move).observe(container);
+        if (document.fonts?.ready) document.fonts.ready.then(move);
+        move();
+        // 分类 chips 动态重渲染后重新定位，并为新 chips 补挂折射
+        new MutationObserver(() => {
+          if (!pill.isConnected) container.appendChild(pill); // innerHTML 重渲染会移除 pill
+          move();
+          if (window.LiquidGlass) LiquidGlass.scan(container);
+        }).observe(container, { childList: true });
+      };
+      document.querySelectorAll('.tag-cloud[data-seg]').forEach(initSeg);
     })();

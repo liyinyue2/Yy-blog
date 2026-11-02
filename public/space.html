@@ -168,7 +168,7 @@
 </div>
 
 <div class="space-shell hidden" id="space-shell">
-  <aside class="space-rail">
+  <aside class="space-rail" data-liquid-glass data-lg-radius="22" data-lg-bevel="12" data-lg-scale="30" data-lg-aberration="6" data-lg-frost="0.5">
     <a class="rail-brand" href="/" aria-label="返回首页">Y<span class="rail-label">我的空间</span></a>
     <nav aria-label="空间模块">
       <button class="rail-btn active" type="button" data-nav="overview" title="概览" aria-label="概览"><svg class="ic"><use href="/icons.svg#i-home"/></svg><span class="rail-label">概览</span></button>
@@ -194,7 +194,7 @@
       <span class="space-user" id="space-user"></span>
       <button class="glass-button" id="space-logout" type="button">登出</button>
     </header>
-    <div class="space-search-results hidden" id="space-search-results"></div>
+    <div class="space-search-results hidden" id="space-search-results" data-liquid-glass data-lg-radius="18" data-lg-bevel="10" data-lg-scale="20" data-lg-aberration="4" data-lg-frost="0.6"></div>
 
     <div class="space-content">
       <!-- 概览 -->
@@ -366,7 +366,7 @@
   </div>
 </div>
 
-<div class="space-player hidden" id="space-player">
+<div class="space-player hidden" id="space-player" data-liquid-glass data-lg-radius="16" data-lg-bevel="10" data-lg-scale="22" data-lg-aberration="4" data-lg-frost="0.5">
   <button class="icon-btn" id="np-prev" type="button" aria-label="上一首"><svg class="ic" style="width:18px;height:18px;"><use href="/icons.svg#i-skip-prev"/></svg></button>
   <button class="icon-btn" id="np-toggle" type="button" aria-label="播放/暂停"><svg class="ic" style="width:20px;height:20px;"><use id="np-toggle-use" href="/icons.svg#i-play"/></svg></button>
   <button class="icon-btn" id="np-next" type="button" aria-label="下一首"><svg class="ic" style="width:18px;height:18px;"><use href="/icons.svg#i-skip-next"/></svg></button>
@@ -377,6 +377,6 @@
 </div>
 <audio id="np-audio" preload="none"></audio>
 
-<script src="/space.js"></script>
+<script src="/space.js"></script><script src="/liquid-glass.js"></script>
 </body>
 </html>

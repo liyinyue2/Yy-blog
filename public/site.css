@@ -54,6 +54,10 @@
       --ambient-1: rgba(10,132,255,.32);   /* iOS 蓝 */
       --ambient-2: rgba(255,159,10,.24);   /* iOS 橙 */
 
+      /* -- Liquid Glass 折射系统（改编自 Aceternity UI LiquidGlass）-- */
+      --lg-tint: rgba(255,255,255,.12);        /* 玻璃本体染色（官方 tint 参数） */
+      --lg-tint-hover: rgba(255,255,255,.20);
+
       /* -- 旧变量映射（存量页面兼容层，禁止再新增硬编码引用）-- */
       --bg: var(--surface);
       --mute: var(--ink-3);
@@ -78,6 +82,8 @@
       --shadow-1: 0 1px 2px rgba(0,0,0,.40), 0 8px 24px rgba(0,0,0,.35);
       --shadow-2: 0 2px 6px rgba(0,0,0,.45), 0 20px 48px rgba(0,0,0,.40);
       --focus-ring: 0 0 0 3px rgba(10,132,255,.5);
+      --lg-tint: rgba(28,28,30,.38);
+      --lg-tint-hover: rgba(28,28,30,.48);
       --ambient-1: rgba(10,132,255,.20);
       --ambient-2: rgba(191,90,242,.14);
     }
@@ -476,3 +482,62 @@ a:focus-visible, button:focus-visible { border-radius: var(--r-s); }
 @media (max-width:760px) {
   .project-grid { grid-template-columns:1fr; }
 }
+
+/* ============================================================
+   Liquid Glass 全站玻璃系统（改编自 Aceternity UI LiquidGlass）
+   来源: https://ui.aceternity.com/components/liquid-glass
+   分级：.lg-refract=真实折射(Chromium) / .lg-frosted=磨砂降级
+         / .lg-opaque=不透明(reduced-transparency)
+   ============================================================ */
+.lg-glass { -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin); }
+.lg-refract {
+  background: var(--lg-tint);
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.lg-refract:hover { background: var(--lg-tint-hover); }
+.lg-refract:active { transform: scale(.995); }
+.lg-frosted { background: var(--glass-bg-strong); }
+.lg-opaque { background: var(--glass-fallback); }
+
+/* 用户偏好减少透明度 → 全部退为不透明玻璃（优先级高于 JS 内联） */
+@media (prefers-reduced-transparency: reduce) {
+  .lg-refract, .lg-frosted {
+    background: var(--glass-fallback) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+}
+
+/* 交互状态全站统一：悬停 / 按下 / 焦点 / 禁用 */
+.glass-button:focus-visible, .icon-btn:focus-visible, .topic-chip:focus-visible,
+.menu-toggle:focus-visible, .player-buttons button:focus-visible {
+  outline: none; box-shadow: var(--focus-ring);
+}
+.icon-btn { transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.icon-btn:active { transform: scale(.92); }
+
+/* 悬浮玻璃工具栏（个人空间侧栏 / 播放条）：折射由 JS 挂载 */
+.space-rail, .space-player, .player-bar, .page-nav {
+  /* 占位：data-liquid-glass 挂载后 backdrop-filter 由内联样式接管 */
+}
+
+/* 播放器圆形控制按钮：轻玻璃圆底 */
+.player-buttons button {
+  border-radius: 50%;
+}
+.player-buttons button:hover { background: rgba(0,0,0,.08); transform: translateY(-1px); }
+.player-buttons button:active { transform: scale(.9); background: rgba(0,0,0,.12); }
+
+/* 分段式切换标签：平滑移动的玻璃选中层 */
+.tag-cloud[data-seg] { position: relative; display: flex; flex-wrap: wrap; gap: 8px; width: fit-content; max-width: 100%; }
+.tag-cloud[data-seg] .seg-pill {
+  position: absolute; top: 0; left: 0; width: 0; height: 0;
+  border-radius: var(--r-pill); background: var(--ink);
+  transition: transform var(--t-base) var(--ease), width var(--t-base) var(--ease), height var(--t-base) var(--ease);
+  z-index: 0; will-change: transform, width; pointer-events: none;
+}
+.tag-cloud[data-seg] .topic-chip { position: relative; z-index: 1; }
+.tag-cloud[data-seg] .topic-chip.is-active {
+  background: transparent; border-color: transparent; color: var(--bg);
+}
+.tag-cloud[data-seg] .topic-chip.is-active:hover { background: transparent; color: var(--bg); }
