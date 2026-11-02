@@ -13,7 +13,7 @@ const load = async () => {
   try {
     const res = await fetch('/api/messages')
     const data = await res.json()
-    messages.value = data.messages || []
+    messages.value = Array.isArray(data) ? data : (data.messages || [])
     state.value = 'ok'
   } catch { state.value = 'error' }
 }
@@ -60,18 +60,23 @@ onMounted(load)
 </template>
 
 <style scoped>
-.msg-form { display: grid; gap: 10px; max-width: 560px; }
+.msg-form { display: grid; gap: 12px; max-width: 640px; }
 .msg-form input, .msg-form textarea {
-  padding: 12px 16px; border-radius: var(--r-m); border: 1px solid var(--hairline-strong);
-  outline: none; background: var(--surface-raised); color: var(--ink);
-  font: inherit; font-size: 13.5px; resize: vertical;
+  padding: 15px 20px; border-radius: var(--r-m); border: 1px solid var(--hairline);
+  outline: none; background: var(--glass-bg); color: var(--ink);
+  font: inherit; font-size: 14px; resize: vertical;
+  -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 2px 10px rgba(0,0,0,.05);
 }
+.msg-form input::placeholder, .msg-form textarea::placeholder { color: var(--ink-3); }
 .msg-form input:focus, .msg-form textarea:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
 .msg-form button {
-  justify-self: start; padding: 11px 26px; border-radius: var(--r-pill);
+  justify-self: start; padding: 13px 30px; border-radius: var(--r-pill);
   background: var(--ink); color: #fff; font-size: 13.5px; font-weight: 500;
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
+.msg-form button:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
 .msg-form button:disabled { opacity: .5; }
 .form-note { font-size: 12.5px; color: var(--ink-3); }
-.msg-list { margin-top: 34px; }
+.msg-list { margin-top: 40px; }
 </style>

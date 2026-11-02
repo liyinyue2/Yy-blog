@@ -20,9 +20,10 @@ const load = async () => {
     if (curKind.value !== 'all') params.set('kind', curKind.value)
     const res = await fetch(`/api/articles?${params}`)
     const data = await res.json()
-    const list = data.articles || data.items || []
-    articles.value = keyword.value
-      ? list.filter(a => (a.title + (a.excerpt || '')).toLowerCase().includes(keyword.value.toLowerCase()))
+    const list = Array.isArray(data) ? data : (data.articles || data.items || [])
+    const kw = keyword.value.trim().toLowerCase()
+    articles.value = kw
+      ? list.filter(a => `${a.title} ${a.summary || ''}`.toLowerCase().includes(kw))
       : list
     state.value = 'ok'
   } catch { state.value = 'error' }
@@ -45,10 +46,10 @@ onMounted(load)
       <input v-model="keyword" type="search" placeholder="搜索文章标题或摘要…" @input="load" />
     </div>
     <div class="article-list">
-      <router-link v-for="a in articles" :key="a.slug" class="article-card" :to="`/post-${a.slug}`">
+      <router-link v-for="a in articles" :key="a.slug" class="article-card" to="/articles">
         <h3>{{ a.title }}</h3>
-        <p>{{ a.excerpt || '点击阅读全文…' }}</p>
-        <span class="card-meta">{{ a.date || a.created_at || '' }}</span>
+        <p>{{ a.summary || '点击阅读全文…' }}</p>
+        <span class="card-meta">{{ a.category_name || '' }} {{ a.date || '' }}</span>
       </router-link>
       <p v-if="state === 'ok' && !articles.length" class="list-empty">还没有内容。</p>
       <p v-if="state === 'loading'" class="list-loading">正在加载…</p>

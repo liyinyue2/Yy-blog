@@ -11,7 +11,7 @@ const load = async () => {
   try {
     const res = await fetch('/api/public/music/tracks')
     const data = await res.json()
-    tracks.value = data.tracks || []
+    tracks.value = Array.isArray(data) ? data : (data.tracks || [])
     state.value = 'ok'
   } catch { state.value = 'error' }
 }

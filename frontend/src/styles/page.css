@@ -1,41 +1,91 @@
-/* 页面共享布局（v3 复刻自 site.css 的 .page-main / .page-head / 列表卡片） */
-.page-main { width: min(92vw, 880px); margin: 0 auto; padding: 110px 0 90px; }
-.page-head { margin-bottom: 42px; }
-.section-kicker { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
-.page-head h1 { font-size: clamp(38px, 6vw, 78px); font-weight: 600; letter-spacing: -.04em; color: var(--ink); }
-.page-desc { max-width: 440px; margin-top: 16px; color: var(--ink-2); font-size: 14px; line-height: 1.7; }
+/* 页面共享布局（v3 · iOS 化：玻璃卡片、大留白、底部导航适配） */
 
-.article-list { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 26px; }
+.page-main {
+  width: min(92vw, 1040px);
+  margin: 0 auto;
+  padding: 128px 0 90px;
+}
+.page-head { margin-bottom: 52px; }
+.section-kicker {
+  font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 12px;
+}
+.page-head h1 {
+  font-size: clamp(40px, 6vw, 84px); font-weight: 600;
+  letter-spacing: -.04em; color: var(--ink);
+}
+.page-desc { max-width: 480px; margin-top: 18px; color: var(--ink-2); font-size: 15px; line-height: 1.75; }
+
+/* ---- 列表 ---- */
+.article-list { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px; }
 .article-card {
-  display: block; padding: 24px 26px; border-radius: var(--r-l);
-  background: var(--surface-raised); border: 1px solid var(--hairline);
-  box-shadow: var(--shadow-1);
+  display: block; padding: 30px 32px; border-radius: var(--r-l);
+  /* iOS 磨砂面板：与导航/小球同一玻璃语言（rim light 统一质感） */
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur-thin);
+  backdrop-filter: var(--glass-blur-thin);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.28),
+    inset 1.5px 2px 2px -.5px rgba(255,255,255,.55),
+    inset -1px -1.5px 2px -.5px rgba(255,255,255,.30),
+    0 2px 8px rgba(0,0,0,.05),
+    0 16px 44px rgba(0,0,0,.08);
   transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
 }
-.article-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); }
-.article-card h3 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 10px; color: var(--ink); }
-.article-card p { font-size: 13.5px; line-height: 1.65; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.article-card .card-meta { margin-top: 14px; font-size: 12px; color: var(--ink-3); }
+[data-theme="dark"] .article-card {
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.13),
+    inset 1.5px 2px 2px -.5px rgba(255,255,255,.2),
+    inset -1px -1.5px 2px -.5px rgba(255,255,255,.09),
+    0 2px 8px rgba(0,0,0,.3),
+    0 16px 44px rgba(0,0,0,.35);
+}
+.article-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.4),
+    inset 1.5px 2px 2px -.5px rgba(255,255,255,.6),
+    inset -1px -1.5px 2px -.5px rgba(255,255,255,.35),
+    0 6px 16px rgba(0,0,0,.07),
+    0 24px 60px rgba(0,0,0,.12);
+}
+.article-card h3 { font-size: 22px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 12px; color: var(--ink); }
+.article-card p { font-size: 14.5px; line-height: 1.7; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.article-card .card-meta { display: block; margin-top: 18px; font-size: 12.5px; color: var(--ink-3); }
 
-.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+/* ---- 筛选与搜索 ---- */
+.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
 .chip {
-  padding: 8px 16px; border-radius: var(--r-pill); font-size: 13px;
-  background: var(--surface-raised); border: 1px solid var(--hairline); color: var(--ink-2);
+  padding: 10px 20px; border-radius: var(--r-pill); font-size: 13.5px;
+  background: var(--glass-bg); border: 1px solid var(--hairline); color: var(--ink-2);
+  -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 1px 4px rgba(0,0,0,.05);
   transition: all var(--t-fast) var(--ease);
 }
 .chip:hover { color: var(--ink); transform: translateY(-1px); }
-.chip.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
-
-.search-row input {
-  width: 100%; padding: 12px 16px; border-radius: var(--r-m);
-  border: 1px solid var(--hairline-strong); outline: none;
-  background: var(--surface-raised); color: var(--ink); font: inherit; font-size: 13.5px;
+.chip.is-active {
+  background: var(--ink); border-color: var(--ink); color: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
 }
+
+.search-row { margin-bottom: 6px; }
+.search-row input {
+  width: 100%; padding: 15px 20px; border-radius: var(--r-m);
+  border: 1px solid var(--hairline); outline: none;
+  background: var(--glass-bg); color: var(--ink); font: inherit; font-size: 14px;
+  -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 2px 10px rgba(0,0,0,.05);
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.search-row input::placeholder { color: var(--ink-3); }
 .search-row input:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
 
-.list-empty, .list-loading { padding: 60px 0; text-align: center; color: var(--ink-3); font-size: 14px; }
+.list-empty, .list-loading { padding: 72px 0; text-align: center; color: var(--ink-3); font-size: 14px; }
 
 @media (max-width: 760px) {
-  .article-list { grid-template-columns: 1fr; }
-  .page-main { padding-top: 92px; }
+  /* 底部导航占据下缘：页面留出安全距离，避免割裂/遮挡 */
+  .page-main { padding: 104px 0 calc(120px + env(safe-area-inset-bottom)); }
+  .article-list { grid-template-columns: 1fr; gap: 16px; }
+  .article-card { padding: 24px 26px; }
 }

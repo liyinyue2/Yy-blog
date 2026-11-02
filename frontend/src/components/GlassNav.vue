@@ -67,8 +67,14 @@ const go = to => { if (route.path !== to) router.push(to) }
   z-index: 40; padding: 0;
 }
 .glass-nav { padding: 10px 18px; }
+/* iOS 底部 tab bar 模式：全宽玻璃贴底 + 安全区 */
 @media (max-width: 760px) {
-  .glass-nav-wrap { width: calc(100% - 24px); }
-  .glass-nav { justify-content: space-between; }
+  .glass-nav-wrap {
+    top: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 12px; right: 12px;
+    margin-inline: 0; width: auto;
+  }
+  .glass-nav { justify-content: space-around; padding: 10px 8px; }
 }
 </style>

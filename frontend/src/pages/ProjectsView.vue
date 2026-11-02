@@ -17,7 +17,7 @@ const load = async () => {
   try {
     const res = await fetch('/api/public/projects')
     const data = await res.json()
-    const list = data.projects || data.items || []
+    const list = Array.isArray(data) ? data : (data.projects || data.items || [])
     projects.value = cur.value === 'all' ? list : list.filter(p => (p.status || '') === cur.value)
     state.value = 'ok'
   } catch { state.value = 'error' }

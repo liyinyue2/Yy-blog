@@ -16,37 +16,57 @@ const OVER = 0.25
 const render = () => lens.value.style.transform = `translate(${pos.x}px, ${pos.y}px)`
 const pos = { x: 0, y: 0 }
 
+/**
+ * 活动范围（偏移坐标系）：透镜是 right 定位，初始基准 P0 在 hero 右侧，
+ * pos 是相对 P0 的偏移 → 合法区间 = [-P0, host宽-透镜宽-P0]。
+ * 之前把边界写成 [0, host宽-透镜宽]（绝对坐标系），
+ * 导致向左/上拖被误判越界（跟手 25% 黏滞）、向右下可拖出屏幕。
+ */
+const base = { x: 0, y: 0 }   // pointerdown 时冻结的无 transform 基准位置
+
+const bounds = () => {
+  const hr = lens.value.parentElement.getBoundingClientRect()
+  const lr = lens.value.getBoundingClientRect()
+  return {
+    minX: -base.x,
+    maxX: hr.width - lr.width - base.x,
+    minY: -base.y,
+    maxY: hr.height - lr.height - base.y,
+  }
+}
+const clampV = (v, minX, maxX) => Math.max(minX, Math.min(maxX, v))
+const band = (v, minX, maxX) =>
+  v < minX ? minX + (v - minX) * OVER :
+  v > maxX ? maxX + (v - maxX) * OVER : v
+
 const glide = (vx = 0, vy = 0) => {
   stopX?.(); stopY?.()
-  const host = lens.value.parentElement
-  const hr = host.getBoundingClientRect()
-  const lr = lens.value.getBoundingClientRect()
-  const maxX = hr.width - lr.width - (lr.left - hr.left - pos.x)
-  const maxY = hr.height - lr.height - (lr.top - hr.top - pos.y)
+  const b = bounds()
   stopX = spring({
-    from: pos.x, to: Math.max(0, Math.min(maxX, pos.x + vx * 0.14)), velocity: vx * 0.9,
-    stiffness: 120, damping: 20,
-    onUpdate: x => {
-      // rubber-band：超出边界部分衰减
-      pos.x = x < 0 ? x * OVER : x > maxX ? maxX + (x - maxX) * OVER : x
-      render()
-    },
-    onSettle: () => { pos.x = Math.max(0, Math.min(maxX, pos.x)); render() },
+    from: pos.x,
+    to: clampV(pos.x + vx * 0.12, b.minX, b.maxX),
+    velocity: vx * 0.9,
+    stiffness: 110, damping: 19,
+    onUpdate: x => { pos.x = band(x, b.minX, b.maxX); render() },
+    onSettle: () => { pos.x = clampV(pos.x, b.minX, b.maxX); render() },
   })
   stopY = spring({
-    from: pos.y, to: Math.max(0, Math.min(maxY, pos.y + vy * 0.14)), velocity: vy * 0.9,
-    stiffness: 120, damping: 20,
-    onUpdate: y => {
-      pos.y = y < 0 ? y * OVER : y > maxY ? maxY + (y - maxY) * OVER : y
-      render()
-    },
-    onSettle: () => { pos.y = Math.max(0, Math.min(maxY, pos.y)); render() },
+    from: pos.y,
+    to: clampV(pos.y + vy * 0.12, b.minY, b.maxY),
+    velocity: vy * 0.9,
+    stiffness: 110, damping: 19,
+    onUpdate: y => { pos.y = band(y, b.minY, b.maxY); render() },
+    onSettle: () => { pos.y = clampV(pos.y, b.minY, b.maxY); render() },
   })
 }
 
 const onDown = e => {
   dragging = true
   stopX?.(); stopY?.()
+  const hr = lens.value.parentElement.getBoundingClientRect()
+  const lr = lens.value.getBoundingClientRect()
+  base.x = lr.left - hr.left - pos.x
+  base.y = lr.top - hr.top - pos.y
   grab.dx = e.clientX - pos.x
   grab.dy = e.clientY - pos.y
   lastPts = [{ x: e.clientX, y: e.clientY, t: performance.now() }]
@@ -58,13 +78,10 @@ const grab = { dx: 0, dy: 0 }
 
 const onMove = e => {
   if (!dragging) return
-  const host = lens.value.parentElement
-  const hr = host.getBoundingClientRect()
-  const lr = lens.value.getBoundingClientRect()
-  const maxX = hr.width - lr.width, maxY = hr.height - lr.height
+  const b = bounds()
   const rawX = e.clientX - grab.dx, rawY = e.clientY - grab.dy
-  pos.x = rawX < 0 ? rawX * OVER : rawX > maxX ? maxX + (rawX - maxX) * OVER : rawX
-  pos.y = rawY < 0 ? rawY * OVER : rawY > maxY ? maxY + (rawY - maxY) * OVER : rawY
+  pos.x = band(rawX, b.minX, b.maxX)
+  pos.y = band(rawY, b.minY, b.maxY)
   render()
   lastPts.push({ x: e.clientX, y: e.clientY, t: performance.now() })
   if (lastPts.length > 6) lastPts.shift()
