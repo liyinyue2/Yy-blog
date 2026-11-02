@@ -1,9 +1,14 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import GlassNav from './components/GlassNav.vue'
+
+const route = useRoute()
+const isAdmin = computed(() => route.path.startsWith('/yy-AviuuP3r'))
 </script>
 
 <template>
-  <GlassNav />
+  <GlassNav v-if="!isAdmin" />
   <router-view v-slot="{ Component }">
     <transition name="page" mode="out-in">
       <component :is="Component" />

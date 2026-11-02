@@ -4,5 +4,6 @@ import router from './router'
 import './styles/tokens.css'
 import './styles/glass.css'
 import './styles/page.css'
+import './styles/admin.css'
 
 createApp(App).use(router).mount('#app')

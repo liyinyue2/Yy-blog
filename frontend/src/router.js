@@ -12,6 +12,7 @@ const router = createRouter({
     { path: '/messages', name: 'messages', component: () => import('./pages/MessagesView.vue') },
     { path: '/music', name: 'music', component: () => import('./pages/MusicView.vue') },
     { path: '/about', name: 'about', component: () => import('./pages/AboutView.vue') },
+    { path: '/yy-AviuuP3r', name: 'admin', component: () => import('./admin/AdminView.vue') },
   ],
   scrollBehavior: () => ({ top: 0 }),
 })
