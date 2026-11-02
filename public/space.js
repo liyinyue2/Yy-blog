@@ -647,6 +647,127 @@
     }
   });
 
+  /* ---------- AI 助手 ---------- */
+  let aiConvs = [];
+  let aiConvId = null;
+  let aiBusy = false;
+  const aiMsgs = $('ai-messages');
+  // AI 面板首次进入时拉会话列表（rail-btn 点击时触发）
+  document.querySelectorAll('.rail-btn').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.nav === 'ai' && !loaded.aiExtra) { loaded.aiExtra = true; loadAiConvs(); }
+  }));
+
+  const renderAiConvs = () => {
+    $('ai-convs').innerHTML = aiConvs.length ? aiConvs.map(c => `
+      <div class="ai-conv-item${c.id === aiConvId ? ' active' : ''}" data-ai-conv="${c.id}">
+        <span class="t">${escapeHtml(c.title)}</span>
+        <button class="icon-btn danger" type="button" data-ai-del="${c.id}" aria-label="删除对话"><svg class="ic"><use href="/icons.svg#i-trash"/></svg></button>
+      </div>`).join('') : '<p class="tool-note">还没有对话。</p>';
+  };
+  const loadAiConvs = async () => {
+    const res = await api('/api/space/ai/conversations');
+    if (!res.ok) { $('ai-note').textContent = apiError(res.data); return; }
+    aiConvs = res.data;
+    renderAiConvs();
+    if (!aiConvId && aiConvs.length) openAiConv(aiConvs[0].id);
+  };
+  const openAiConv = async id => {
+    aiConvId = id;
+    renderAiConvs();
+    const res = await api(`/api/space/ai/conversations/${id}/messages`);
+    if (!res.ok) return;
+    aiMsgs.innerHTML = res.data.length ? '' : '<p class="tool-note">还没有消息，说点什么吧。</p>';
+    res.data.forEach(m => appendAiMsg(m.role, m.content));
+    aiMsgs.scrollTop = aiMsgs.scrollHeight;
+  };
+  const appendAiMsg = (role, text) => {
+    const div = document.createElement('div');
+    div.className = 'ai-msg ' + (role === 'user' ? 'user' : 'assistant');
+    div.textContent = text;   // textContent 渲染，杜绝注入
+    aiMsgs.appendChild(div);
+    return div;
+  };
+  $('ai-new').addEventListener('click', async () => {
+    const res = await api('/api/space/ai/conversations', { method: 'POST', body: JSON.stringify({}) });
+    if (res.ok) { await loadAiConvs(); openAiConv(res.data.id); }
+    else $('ai-note').textContent = apiError(res.data);
+  });
+  $('ai-convs').addEventListener('click', e => {
+    const del = e.target.closest('[data-ai-del]');
+    if (del) {
+      if (!confirm('确定删除这组对话？消息一并删除，不可恢复。')) return;
+      api(`/api/space/ai/conversations/${del.dataset.aiDel}`, { method: 'DELETE' })
+        .then(() => { if (aiConvId === +del.dataset.aiDel) { aiConvId = null; aiMsgs.innerHTML = '<p class="tool-note">选择左侧对话，或点「新对话」开始。</p>'; } loadAiConvs(); });
+      return;
+    }
+    const item = e.target.closest('[data-ai-conv]');
+    if (item) openAiConv(+item.dataset.aiConv);
+  });
+  const aiSend = async () => {
+    if (aiBusy) return;
+    const content = $('ai-input').value.trim();
+    if (!content) return;
+    if (!aiConvId) {
+      const res = await api('/api/space/ai/conversations', { method: 'POST', body: JSON.stringify({}) });
+      if (!res.ok) { $('ai-note').textContent = apiError(res.data); return; }
+      aiConvId = res.data.id;
+      aiConvs.unshift({ id: aiConvId, title: content.slice(0, 60), message_count: 0 });
+      renderAiConvs();
+    }
+    $('ai-input').value = '';
+    appendAiMsg('user', content);
+    aiMsgs.scrollTop = aiMsgs.scrollHeight;
+    aiBusy = true;
+    $('ai-send').disabled = true;
+    const bubble = appendAiMsg('assistant', '');
+    try {
+      const resp = await authedFetch('/api/space/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: aiConvId, content })
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        bubble.textContent = apiError(data);
+        return;
+      }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t.startsWith('data:')) continue;
+          const payload = t.slice(5).trim();
+          if (payload === '[DONE]') continue;
+          try {
+            const obj = JSON.parse(payload);
+            if (obj.delta) {
+              bubble.textContent += obj.delta;
+              aiMsgs.scrollTop = aiMsgs.scrollHeight;
+            }
+          } catch { /* 忽略坏帧 */ }
+        }
+      }
+      if (!bubble.textContent) bubble.textContent = '(空回复)';
+    } catch (err) {
+      bubble.textContent += `\n[连接中断] ${err.message}`;
+    } finally {
+      aiBusy = false;
+      $('ai-send').disabled = false;
+      loadAiConvs();
+    }
+  };
+  $('ai-send').addEventListener('click', aiSend);
+  $('ai-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiSend(); }
+  });
+
   /* ---------- 启动 ---------- */
   const boot = () => {
     $('space-user').textContent = 'admin';

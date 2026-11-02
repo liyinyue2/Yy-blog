@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # HTTPS 就绪后设 ENABLE_HSTS=1，注入 Strict-Transport-Security
     ENABLE_HSTS: bool = False
 
+    # AI 中心（OpenAI 兼容接口；密钥仅存服务端，绝不下发前端）
+    AI_API_KEY: str = ""
+    AI_BASE_URL: str = "https://api.openai.com/v1"
+    AI_MODEL: str = "gpt-4o-mini"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]

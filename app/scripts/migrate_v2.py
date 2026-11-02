@@ -118,6 +118,23 @@ PROJECT_MIGRATIONS = [
     "CREATE INDEX IF NOT EXISTS idx_project_logs_project ON project_logs(project_id)",
 ]
 
+AI_MIGRATIONS = [
+    """CREATE TABLE IF NOT EXISTS ai_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL DEFAULT '新的对话',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+    )""",
+    """CREATE TABLE IF NOT EXISTS ai_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL REFERENCES ai_conversations(id) ON DELETE CASCADE,
+        role TEXT NOT NULL CHECK (role IN ('user','assistant')),
+        content TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_ai_messages_conv ON ai_messages(conversation_id)",
+]
+
 POMODORO_MIGRATIONS = [
     """CREATE TABLE IF NOT EXISTS pomodoro_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -284,6 +301,8 @@ def run(quiet: bool = False) -> None:
     for sql in MUSIC_MIGRATIONS:
         conn.execute(sql)
     for sql in POMODORO_MIGRATIONS:
+        conn.execute(sql)
+    for sql in AI_MIGRATIONS:
         conn.execute(sql)
     _ensure_track_visibility(conn)
     _ensure_article_kind(conn)

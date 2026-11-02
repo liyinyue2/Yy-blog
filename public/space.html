@@ -107,6 +107,19 @@
   .space-player input[type=range] { flex:2; accent-color:#111; }
   .space-player .np-time { font-size:12px; color:var(--sub); flex:none; }
   /* AI 占位 */
+  .ai-layout { display:grid; grid-template-columns:250px minmax(0,1fr); gap:20px; align-items:start; }
+  .ai-conv-pane { max-height:72vh; overflow:auto; }
+  .ai-conv-item { padding:10px 12px; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; gap:8px; align-items:center; border:1px solid transparent; }
+  .ai-conv-item:hover { background:rgba(0,0,0,.04); }
+  .ai-conv-item.active { border-color:var(--hairline); background:var(--glass-bg-strong); }
+  .ai-conv-item span.t { flex:1; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ai-chat-pane { display:flex; flex-direction:column; }
+  .ai-messages { min-height:320px; max-height:56vh; overflow:auto; display:flex; flex-direction:column; gap:12px; padding:4px 2px; }
+  .ai-msg { max-width:85%; padding:10px 14px; border-radius:var(--r-m); font-size:14px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .ai-msg.user { align-self:flex-end; background:#111; color:#fff; border-bottom-right-radius:6px; }
+  .ai-msg.assistant { align-self:flex-start; background:rgba(0,0,0,.05); border-bottom-left-radius:6px; }
+  .ai-input-row { display:flex; gap:10px; margin-top:14px; align-items:flex-end; }
+  .ai-input-row textarea { flex:1; font:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--hairline); border-radius:12px; background:var(--glass-bg); resize:none; }
   .ai-stub { padding:60px 20px; text-align:center; color:var(--sub); }
   .hidden { display:none !important; }
   @media (max-width:860px) {
@@ -305,9 +318,20 @@
       <!-- AI 助手 -->
       <section data-panel="ai" class="hidden">
         <h2>AI 助手</h2>
-        <p class="space-section-sub">与自己的知识对话。</p>
-        <div class="glass-card" id="ai-root">
-          <div class="ai-stub">AI 助手正在接入中，稍后回来。</div>
+        <p class="space-section-sub">与自己的知识对话。密钥仅存服务器，对话记录保存在本站数据库。</p>
+        <div class="ai-layout">
+          <div class="glass-card ai-conv-pane">
+            <button class="glass-button primary" id="ai-new" type="button" style="width:100%;">＋ 新对话</button>
+            <div id="ai-convs" style="margin-top:12px;"></div>
+          </div>
+          <div class="glass-card ai-chat-pane">
+            <div class="ai-messages" id="ai-messages"><p class="tool-note">选择左侧对话，或点「新对话」开始。</p></div>
+            <div class="ai-input-row">
+              <textarea id="ai-input" rows="2" placeholder="输入消息…（Enter 发送，Shift+Enter 换行）"></textarea>
+              <button class="glass-button primary" id="ai-send" type="button">发送</button>
+            </div>
+            <p class="tool-note" id="ai-note"></p>
+          </div>
         </div>
       </section>
     </div>
