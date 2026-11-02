@@ -80,7 +80,6 @@
   };
   $('token-submit').addEventListener('click', doLogin);
   $('pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  if (access && refresh) { gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll(); }
 
   /* ---------- 面板路由（hash，刷新保持当前面板） ---------- */
   const PANELS = ['workspace', 'cloud', 'music', 'articles', 'categories', 'tags',
@@ -598,4 +597,7 @@
       loadCloud();
     }
   });
+
+  // 已有会话则免登录直接进入（放在末尾：避免 const 箭头函数 TDZ 在脚本初始化期被调用）
+  if (access && refresh) { gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll(); }
 })();
