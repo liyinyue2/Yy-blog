@@ -1,0 +1,85 @@
+/* ============================================================
+   iOS 26 Liquid Glass 样式层
+   核心：中心通透（折射由 engine.js 接管 backdrop-filter），
+   质感来自 rim light（内侧高光）+ 柔和外阴影 —— 而非白雾 tint。
+   ============================================================ */
+
+/* 通用玻璃表面：rim light 是 iOS 玻璃的灵魂 */
+.lg-surface {
+  position: relative;
+  background: var(--lg-tint);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.28),                 /* 均匀细边 */
+    inset 1.5px 2px 2px -.5px rgba(255,255,255,.55),       /* 左上主高光 */
+    inset -1px -1.5px 2px -.5px rgba(255,255,255,.30),     /* 右下回光 */
+    0 2px 8px rgba(0,0,0,.06),                             /* 外阴影（贴合感） */
+    0 12px 40px rgba(0,0,0,.08);
+  transition: background var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease),
+              transform var(--t-fast) var(--ease);
+}
+[data-theme="dark"] .lg-surface {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.14),
+    inset 1.5px 2px 2px -.5px rgba(255,255,255,.22),
+    inset -1px -1.5px 2px -.5px rgba(255,255,255,.10),
+    0 2px 8px rgba(0,0,0,.30),
+    0 12px 40px rgba(0,0,0,.35);
+}
+.lg-surface:active { /* 注意：禁止在 lg-surface 上写 transform，会覆盖外层的定位 transform */ }
+
+/* 磨砂降级（Safari / Firefox） */
+.lg-surface.lg-fallback {
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+}
+
+/* reduced transparency：退为实底 */
+@media (prefers-reduced-transparency: reduce) {
+  .lg-surface {
+    background: var(--glass-fallback) !important;
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    box-shadow: var(--shadow-1) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* ============ 导航玻璃小球（手势拖拽 + 回弹） ============ */
+.glass-nav {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(18px, 2.6vw, 40px);
+  padding: 14px 24px;
+  font-size: 13.5px; line-height: 1;
+  border-radius: var(--r-m);
+  width: fit-content; margin-inline: auto;
+}
+.glass-nav .nav-item {
+  position: relative; z-index: 2;
+  color: var(--ink-2); white-space: nowrap;
+  transition: color var(--t-fast) var(--ease);
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+.glass-nav .nav-item:hover { color: var(--ink); }
+.glass-nav .nav-item.is-active { color: var(--ink); font-weight: 600; }
+
+/* 小球本体：平时在文字层下（不挡导航点击），抓起时提到最上层 */
+.glass-ball {
+  position: absolute; top: 0; left: 0; z-index: 1;
+  border-radius: var(--r-pill);
+  touch-action: none;
+  will-change: transform, width;
+}
+.glass-ball.is-grabbed {
+  z-index: 5;
+  cursor: grabbing;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.35),
+    inset 2px 3px 3px -.5px rgba(255,255,255,.6),
+    inset -1px -2px 3px -.5px rgba(255,255,255,.35),
+    0 8px 20px rgba(0,0,0,.16),
+    0 24px 64px rgba(0,0,0,.18);
+}
+.glass-ball.is-grabbed .ball-inner { transform: scale(1.08); }

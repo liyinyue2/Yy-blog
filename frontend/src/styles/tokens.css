@@ -1,0 +1,97 @@
+/* ============================================================
+   Y's Blog v3 · Design Tokens（自 site.css 1:1 迁移）
+   ============================================================ */
+:root {
+  /* 色彩 · 亮色（默认） */
+  --surface: #f5f5f7;
+  --surface-raised: #ffffff;
+  --ink: #1d1d1f;
+  --ink-2: #55555a;
+  --ink-3: #86868b;
+  --accent: #0a84ff;
+  --accent-ink: #ffffff;
+  --danger: #e5484d;
+  --ok: #30a46c;
+
+  /* 玻璃 */
+  --glass-bg: rgba(255,255,255,.46);
+  --glass-bg-strong: rgba(255,255,255,.72);
+  --glass-bg-dark: rgba(28,28,30,.72);
+  --glass-blur: saturate(200%) blur(28px);
+  --glass-blur-thin: saturate(180%) blur(18px);
+  --glass-fallback: rgba(255,255,255,.97);
+  --hairline: rgba(0,0,0,.08);
+  --hairline-strong: rgba(0,0,0,.14);
+  --highlight: rgba(255,255,255,.78);
+
+  /* 几何 */
+  --r-s: 10px; --r-m: 16px; --r-l: 22px; --r-pill: 999px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+
+  /* 阴影 */
+  --shadow-1: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+  --shadow-2: 0 2px 6px rgba(0,0,0,.06), 0 20px 48px rgba(0,0,0,.10);
+
+  /* 动效 */
+  --t-fast: 150ms; --t-base: 250ms; --t-slow: 400ms;
+  --ease: cubic-bezier(.32,.72,0,1);
+  --ease-spring: cubic-bezier(.3,1.42,.42,1);
+
+  /* 字体 */
+  --font-ui: Inter, "Noto Sans SC", system-ui, sans-serif;
+  --fs-xs: 12px; --fs-s: 13px; --fs-m: 15px; --fs-l: 17px; --fs-xl: 22px;
+
+  /* 环境光斑（折射源） */
+  --ambient-1: rgba(10,132,255,.32);
+  --ambient-2: rgba(255,159,10,.24);
+
+  /* Liquid Glass */
+  --lg-tint: rgba(255,255,255,.06);       /* iOS 质感：极轻 tint，去白雾 */
+  --lg-tint-hover: rgba(255,255,255,.10);
+}
+
+[data-theme="dark"] {
+  --surface: #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --ink: #f5f5f7;
+  --ink-2: rgba(235,235,245,.72);
+  --ink-3: rgba(235,235,245,.45);
+  --glass-bg: rgba(44,44,46,.55);
+  --glass-bg-strong: rgba(44,44,46,.80);
+  --glass-bg-dark: rgba(20,20,22,.78);
+  --glass-fallback: rgba(28,28,30,.98);
+  --hairline: rgba(255,255,255,.12);
+  --hairline-strong: rgba(255,255,255,.20);
+  --highlight: rgba(255,255,255,.18);
+  --shadow-1: 0 1px 2px rgba(0,0,0,.40), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-2: 0 2px 6px rgba(0,0,0,.45), 0 20px 48px rgba(0,0,0,.40);
+  --lg-tint: rgba(28,28,30,.30);
+  --lg-tint-hover: rgba(28,28,30,.40);
+  --ambient-1: rgba(10,132,255,.20);
+  --ambient-2: rgba(191,90,242,.14);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--surface); color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+a { color: inherit; text-decoration: none; }
+button { border: 0; font: inherit; cursor: pointer; }
+
+/* 环境光斑 */
+body::before, body::after {
+  content: ""; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%;
+}
+body::before {
+  width: 72vw; height: 72vw; min-width: 520px; min-height: 520px; top: -20vw; right: -16vw;
+  background: radial-gradient(closest-side, var(--ambient-1), transparent 72%);
+}
+body::after {
+  width: 64vw; height: 64vw; min-width: 460px; min-height: 460px; bottom: -18vw; left: -14vw;
+  background: radial-gradient(closest-side, var(--ambient-2), transparent 72%);
+}
