@@ -10,6 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import db
 from app.modules.ai.router import router as ai_router
+from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.blog.router import router as blog_router
 from app.modules.cloud.router import router as cloud_router
@@ -104,6 +105,7 @@ async def validation_handler(request: Request, exc: RequestValidationError):
 
 app.include_router(auth_router)
 app.include_router(ai_router)
+app.include_router(audit_router)
 app.include_router(blog_router)
 app.include_router(tags_router)
 app.include_router(workspace_router)

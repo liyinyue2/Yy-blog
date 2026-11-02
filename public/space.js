@@ -157,16 +157,18 @@
     $('ov-date').textContent = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
     const [stats, notes, files, tracks, pomodoro] = await Promise.all([
       api('/api/stats'), api('/api/workspace/notes?limit=1'),
-      api('/api/cloud/files?limit=1'), api('/api/admin/music/tracks?limit=1'),
+      api('/api/cloud/files?limit=100'), api('/api/admin/music/tracks?limit=200'),
       api('/api/space/pomodoro?limit=1')
     ]);
     if (!stats.ok) return;
+    const filesCount = files.ok ? (Array.isArray(files.data) ? files.data.length : '—') : '—';
+    const tracksCount = tracks.ok ? (Array.isArray(tracks.data) ? tracks.data.length : '—') : '—';
     const tiles = [
       ['文章', stats.data.articles], ['留言', stats.data.messages],
       ['总阅读', stats.data.views],
       ['笔记', notes.ok ? notes.data.total : '—'],
-      ['文件', files.ok ? (Array.isArray(files.data) ? files.data.length : '—') : '—'],
-      ['曲目', tracks.ok ? (Array.isArray(tracks.data) ? tracks.data.length : '—') : '—']
+      ['文件', filesCount >= 100 ? '100+' : filesCount],
+      ['曲目', tracksCount >= 200 ? '200+' : tracksCount]
     ];
     if (pomodoro.ok && pomodoro.data.today) tiles.push(['今日番茄', pomodoro.data.today]);
     $('ov-stats').innerHTML = tiles.map(([label, n]) =>

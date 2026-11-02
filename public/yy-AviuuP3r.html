@@ -391,9 +391,17 @@
       </div>
     </section>
 
-    <!-- 系统：审计日志（占位，查看接口后续版本提供） -->
+    <!-- 系统：审计日志 -->
     <section data-panel="audit" class="hidden">
-      <p class="admin-note">审计日志当前写入服务器 logs/audit.log，在线查看功能将在后续版本提供。</p>
+      <div class="import-row" style="margin-bottom:14px;">
+        <input type="search" id="au-search" placeholder="搜索动作 / 用户 / IP / 详情…" style="flex:1;min-width:200px;font:inherit;font-size:14px;padding:9px 14px;border:1px solid rgba(0,0,0,.14);border-radius:999px;" />
+        <button type="button" class="import-btn" id="au-refresh">刷新</button>
+        <span class="admin-note" id="au-note"></span>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>时间</th><th>用户</th><th>动作</th><th>详情</th><th>IP</th></tr></thead>
+        <tbody id="audit-rows"></tbody>
+      </table>
     </section>
 
     <!-- 系统：管理员账号（占位，管理接口后续版本提供） -->

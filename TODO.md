@@ -173,3 +173,15 @@
 ## v2.0 新增安全约束落实情况
 零硬编码密钥（.env.example + secrets 生成）· 全参数化 SQL · Pydantic 模型校验全部请求体 ·
 CORS 白名单（无 *）· 全局安全响应头中间件 · 审计日志全覆盖（登录/增删改/上传/删除文件）
+
+# v2.3 个人数字空间（2026-11-02，P0–P7 全量）
+
+- [x] **P0 设计系统**：site.css token 层（亮暗双套）+ 玻璃组件库 + icons.svg sprite（36 图标）+ 环境光斑 + hands.js 帧率节流；tag `v2.2-p0`。
+- [x] **P1 知识中心**：articles.kind（文章/技术笔记）、前台 kind 切换、后台标签管理 UI、启动迁移自愈；tag `v2.2-p1`。
+- [x] **P2 项目中心**：projects/project_logs 表、公开项目页 `/projects.html` + 动态详情页 `/projects/{slug}.html`、后台项目管理（状态/进度/技术栈/可见性/开发日志）；tag `v2.3-p2`。
+- [x] **P3 个人空间**：`/space.html` 单页应用（左侧图标栏 + hash 路由）：概览（问候/统计/今日待办/最近笔记/快速入口）、知识笔记（双栏编辑）、云盘、效率工具（番茄钟 localStorage+服务端双写 / JSON / 文本 / 网络信息）、音乐库、AI 助手；`/api/space/search` 六类聚合搜索；待办增强（due/priority）；tag `v2.3-p3`。
+- [x] **P4 云盘增强**：files.is_starred、文件名搜索、收藏筛选、图片/文本在线预览；tag `v2.3-p4`。
+- [x] **P5 音乐增强**：收藏（track_favorites）、最近播放（play_history，去重到曲目）、space 音乐面板收藏区/历史区/星标；tag `v2.3-p5`。
+- [x] **P6 AI 中心**：ai_conversations/ai_messages、SSE 流式聊天（OpenAI 兼容上游，密钥仅服务端 env：AI_API_KEY/AI_BASE_URL/AI_MODEL）、限流 60s/10 次、审计埋点、前端 textContent 渲染；未配置密钥时 503 提示；tag `v2.3-p6`。
+- [x] **P7 收尾**：审计日志在线查看（`/api/admin/audit` + 后台面板搜索/刷新）、遗留表 tags_legacy/article_tags 归档后 DROP（`python -m app.scripts.cleanup_legacy`，归档在 data/legacy-archive/）、89 项回归全绿、桌面/移动双端截图自查；tag `v2.3`。
+- [ ] **待办（下一阶段）**：Docker Compose 服务器实测；site.css 残余硬编码色值清理；AI 知识库问答（RAG）；后台 admin 页内联样式迁移到外部 CSS。

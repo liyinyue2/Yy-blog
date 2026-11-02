@@ -752,6 +752,31 @@
     }
   });
 
+  /* ---------- 审计日志 ---------- */
+  let auTimer;
+  const loadAudit = async (q = '') => {
+    const res = await api('/api/admin/audit?limit=100' + (q ? '&q=' + encodeURIComponent(q) : ''));
+    if (!res.ok) return;
+    $('au-note').textContent = `共 ${res.data.total} 条（显示最近 ${res.data.items.length} 条）`;
+    $('audit-rows').innerHTML = res.data.items.length ? res.data.items.map(a => `
+      <tr>
+        <td class="muted" style="white-space:nowrap;">${escapeHtml(a.time)}</td>
+        <td>${escapeHtml(a.user)}</td>
+        <td><span class="badge">${escapeHtml(a.action)}</span></td>
+        <td class="muted" style="max-width:320px;overflow-wrap:anywhere;">${escapeHtml(a.detail)}</td>
+        <td class="muted">${escapeHtml(a.ip)}</td>
+      </tr>`).join('') : '<tr><td colspan="5" class="muted">没有匹配的日志。</td></tr>';
+  };
+  $('au-refresh').addEventListener('click', () => loadAudit($('au-search').value.trim()));
+  $('au-search').addEventListener('input', () => {
+    clearTimeout(auTimer);
+    auTimer = setTimeout(() => loadAudit($('au-search').value.trim()), 300);
+  });
+  // 切到审计面板时刷新一次
+  window.addEventListener('hashchange', () => {
+    if (location.hash === '#audit') loadAudit($('au-search').value.trim());
+  });
+
   // 已有会话则免登录直接进入（放在末尾：避免 const 箭头函数 TDZ 在脚本初始化期被调用）
   if (access && refresh) { gate.classList.add('hidden'); panel.classList.remove('hidden'); loadAll(); }
 })();
