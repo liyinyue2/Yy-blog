@@ -42,7 +42,7 @@ onMounted(load)
         <p>{{ t.artist || '未知艺术家' }}</p>
         <span class="card-meta">{{ playingId === t.id ? '▶ 播放中' : '点击播放' }}</span>
       </article>
-      <p v-if="state === 'ok' && !tracks.length" class="list-empty">曲库还是空的。</p>
+      <p v-if="state === 'ok' && !tracks.length" class="list-empty">曲库还是空的——等博主上传第一首歌。</p>
       <p v-if="state === 'loading'" class="list-loading">正在加载…</p>
     </div>
     <audio ref="audio" @ended="playingId = null"></audio>

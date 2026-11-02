@@ -39,6 +39,10 @@ const go = to => { if (route.path !== to) router.push(to) }
 <template>
   <LiquidGlass :radius="18" :bevel="12" :scale="36" tag="nav" class="glass-nav-wrap" aria-label="博客主导航">
     <nav ref="navEl" class="glass-nav">
+      <a class="brand" href="/" @click.prevent="go('/')" aria-label="Y's Blog 首页">
+        <svg viewBox="0 0 16 18" aria-hidden="true"><path fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M3.2 1.8Q6.4 5.4 8 8.6M12.8 1.8Q9.6 5.4 8 8.6Q8.35 13 8 16.4"/></svg>
+        <span>Y's Blog</span>
+      </a>
       <GlassBall
         ref="ball"
         :container="navEl"
@@ -67,6 +71,17 @@ const go = to => { if (route.path !== to) router.push(to) }
   z-index: 40; padding: 0;
 }
 .glass-nav { padding: 10px 18px; }
+.brand {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-right: 10px; color: var(--ink);
+  font-size: 15px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+}
+.brand svg { width: 16px; height: 18px; fill: none; stroke: currentColor; }
+.brand span { position: relative; z-index: 1; }
+/* 手机底部 tab bar 不放 brand（纯导航项） */
+@media (max-width: 760px) {
+  .brand { display: none; }
+}
 /* iOS 底部 tab bar 模式：全宽玻璃贴底 + 安全区 */
 @media (max-width: 760px) {
   .glass-nav-wrap {

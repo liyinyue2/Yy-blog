@@ -43,11 +43,11 @@ const STATUS_LABEL = { building: '开发中', maintained: '维护中', idea: '�
       >{{ s.label }}</button>
     </div>
     <div class="article-list">
-      <article v-for="p in projects" :key="p.slug" class="article-card">
+      <router-link v-for="p in projects" :key="p.slug" class="article-card" :to="`/projects/${p.slug}`">
         <h3>{{ p.name || p.title }}</h3>
         <p>{{ p.summary || p.description || '' }}</p>
         <span class="card-meta">{{ STATUS_LABEL[p.status] || p.status || '' }}</span>
-      </article>
+      </router-link>
       <p v-if="state === 'ok' && !projects.length" class="list-empty">还没有公开项目。</p>
       <p v-if="state === 'loading'" class="list-loading">正在加载…</p>
     </div>

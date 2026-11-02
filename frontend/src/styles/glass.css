@@ -50,12 +50,15 @@
 .glass-nav {
   position: relative;
   display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap;
   gap: clamp(18px, 2.6vw, 40px);
   padding: 14px 24px;
   font-size: 13.5px; line-height: 1;
   border-radius: var(--r-m);
   width: fit-content; margin-inline: auto;
 }
+/* 子项禁止收缩：fit-content 才能算准宽度（否则 brand 文字被压换行） */
+.glass-nav > * { flex-shrink: 0; }
 .glass-nav .nav-item {
   position: relative; z-index: 2;
   color: var(--ink-2); white-space: nowrap;

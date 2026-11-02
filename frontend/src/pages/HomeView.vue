@@ -1,5 +1,13 @@
 <script setup>
+import { ref } from 'vue'
 import DraggableLens from '../components/DraggableLens.vue'
+import SocialLinks from '../components/SocialLinks.vue'
+
+const copied = ref('')
+const onCopied = label => {
+  copied.value = `${label} 已复制到剪贴板`
+  setTimeout(() => { copied.value = '' }, 2200)
+}
 </script>
 
 <template>
@@ -9,6 +17,12 @@ import DraggableLens from '../components/DraggableLens.vue'
       <h1><span class="muted">记录思考，</span><span>分享创造。</span></h1>
       <p class="subline">这是一个关于前端开发、UI设计与个人成长的自留地。</p>
       <div class="cta"><router-link to="/articles">阅读最新文章</router-link></div>
+    </div>
+    <div class="socials-wrap">
+      <SocialLinks @copied="onCopied" />
+      <transition name="toast-in">
+        <div v-if="copied" class="copy-toast">{{ copied }}</div>
+      </transition>
     </div>
     <DraggableLens />
   </section>
@@ -37,7 +51,7 @@ import DraggableLens from '../components/DraggableLens.vue'
 @media (prefers-reduced-transparency: reduce) { .hero-blobs { display: none; } }
 
 .copy {
-  position: absolute; z-index: 3; top: 24.5%; left: 50%;
+  position: absolute; z-index: 3; top: 22%; left: 50%;
   width: min(92vw, 760px); transform: translateX(-50%); text-align: center;
 }
 .copy h1 {
@@ -57,4 +71,17 @@ import DraggableLens from '../components/DraggableLens.vue'
   box-shadow: var(--shadow-1);
 }
 .cta a:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+
+.socials-wrap {
+  position: absolute; z-index: 3; bottom: clamp(40px, 7vh, 72px);
+  left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.copy-toast {
+  padding: 10px 18px; border-radius: var(--r-pill);
+  background: var(--glass-bg-dark); color: #fff; font-size: 12.5px;
+  -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin);
+  box-shadow: var(--shadow-2);
+}
+.toast-in-enter-active, .toast-in-leave-active { transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease); }
+.toast-in-enter-from, .toast-in-leave-to { opacity: 0; transform: translateY(8px); }
 </style>
