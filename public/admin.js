@@ -13,6 +13,8 @@
   let refresh = sessionStorage.getItem('admin-refresh') || '';
   let editingSlug = null;
   let editingCategory = null;
+  let editingProject = null;
+  let logProject = null;   // 当前添加开发日志的目标项目 {id, name}
   const fmtSize = n => { n = +n || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B'; };
   const fmtDur = s => { s = Math.round(+s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   // 不带 Content-Type 的鉴权请求（multipart 上传 / blob 下载用；浏览器自动设表单边界）
@@ -82,7 +84,7 @@
   $('pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
   /* ---------- 面板路由（hash，刷新保持当前面板） ---------- */
-  const PANELS = ['workspace', 'cloud', 'music', 'articles', 'categories', 'tags',
+  const PANELS = ['workspace', 'cloud', 'music', 'articles', 'projects', 'categories', 'tags',
                   'messages', 'subscribers', 'settings', 'audit', 'admins'];
   const showPanel = name => {
     if (!PANELS.includes(name)) name = 'workspace';
@@ -96,11 +98,13 @@
 
   /* ---------- 数据加载 ---------- */
   const loadAll = async () => {
-    const [stats, articles, categories, messages, subscribers, settings, tags] = await Promise.all([
+    const [stats, articles, categories, messages, subscribers, settings, tags, projects] = await Promise.all([
       api('/api/stats'), api('/api/admin/articles'), api('/api/categories'),
-      api('/api/admin/messages'), api('/api/admin/subscribers'), api('/api/settings'), api('/api/tags')
+      api('/api/admin/messages'), api('/api/admin/subscribers'), api('/api/settings'), api('/api/tags'),
+      api('/api/admin/projects')
     ]);
     if (!stats.ok || !articles.ok) { sessionStorage.removeItem('admin-access'); sessionStorage.removeItem('admin-refresh'); location.reload(); return; }
+    window._projects = projects.ok ? projects.data : [];
     const s = stats.data;
     $('admin-stats').innerHTML = [
       ['文章', s.articles], ['分类', s.categories],
@@ -168,7 +172,7 @@
     }
 
     // 工作台 / 音乐 / 网盘
-    loadWorkspace(); loadMusic(); loadCloud();
+    loadWorkspace(); loadMusic(); loadCloud(); loadProjects();
   };
 
   /* ---------- 标签管理 ---------- */
@@ -186,6 +190,121 @@
     if (!confirm(`确定删除标签「${btn.dataset.tagName}」？将同时解除所有关联。`)) return;
     const res = await api('/api/admin/tags/' + btn.dataset.delTag, { method: 'DELETE' });
     if (res.ok) loadAll();
+  });
+
+  /* ---------- 项目管理 ---------- */
+  const STATUS_LABELS = { idea: '构想中', building: '开发中', maintained: '维护中', archived: '已归档' };
+  const loadProjects = async () => {
+    const res = await api('/api/admin/projects');
+    if (!res.ok) return;
+    window._projects = res.data;
+    $('project-rows').innerHTML = res.data.length ? res.data.map(p => `
+      <tr>
+        <td>${escapeHtml(p.name)}<div class="muted">/projects/${escapeHtml(p.slug)}.html</div></td>
+        <td><span class="badge">${STATUS_LABELS[p.status] || escapeHtml(p.status)}</span></td>
+        <td>${+p.progress || 0}%</td>
+        <td>${p.visibility === 'private' ? '<span class="badge">私密</span>' : '<span class="badge">公开</span>'}</td>
+        <td class="actions">
+          <button type="button" data-edit-proj="${p.id}">编辑</button>
+          <button type="button" data-log-proj="${p.id}">日志</button>
+          <button type="button" class="danger" data-del-proj="${p.id}" data-proj-name="${escapeHtml(p.name)}">删除</button>
+        </td>
+      </tr>`).join('') : '<tr><td colspan="5" class="muted">还没有项目，用上方表单创建第一个。</td></tr>';
+  };
+  const resetProjectForm = () => {
+    editingProject = null;
+    ['p-slug', 'p-name', 'p-summary', 'p-tech', 'p-repo', 'p-demo', 'p-desc'].forEach(id => { $(id).value = ''; });
+    $('p-status').value = 'idea'; $('p-visibility').value = 'public';
+    $('p-progress').value = '0'; $('p-sort').value = '0';
+    $('p-save').textContent = '保存项目';
+  };
+  $('p-save').addEventListener('click', async () => {
+    const name = $('p-name').value.trim();
+    if (!name) { $('p-note').textContent = '项目名称必填。'; return; }
+    const payload = {
+      slug: $('p-slug').value.trim(), name,
+      summary: $('p-summary').value.trim(), description: $('p-desc').value,
+      tech_stack: $('p-tech').value.split(/[,，]/).map(t => t.trim()).filter(Boolean),
+      status: $('p-status').value, visibility: $('p-visibility').value,
+      progress: Math.max(0, Math.min(100, +$('p-progress').value || 0)),
+      sort: +$('p-sort').value || 0,
+      repo_url: $('p-repo').value.trim(), demo_url: $('p-demo').value.trim()
+    };
+    const res = editingProject
+      ? await api('/api/admin/projects/' + editingProject, { method: 'PUT', body: JSON.stringify(payload) })
+      : await api('/api/admin/projects', { method: 'POST', body: JSON.stringify(payload) });
+    $('p-note').classList.toggle('is-error', !res.ok);
+    if (res.ok) {
+      $('p-note').innerHTML = `已保存。　<a href="/projects/${encodeURIComponent(res.data.slug)}.html" target="_blank">查看页面 ↗</a>`;
+      resetProjectForm();
+      loadProjects();
+    } else {
+      $('p-note').textContent = apiError(res.data, '保存失败');
+    }
+  });
+  $('p-reset').addEventListener('click', () => { resetProjectForm(); $('p-note').textContent = '新建模式。'; });
+  $('project-rows').addEventListener('click', async e => {
+    const editBtn = e.target.closest('[data-edit-proj]');
+    const logBtn = e.target.closest('[data-log-proj]');
+    const delBtn = e.target.closest('[data-del-proj]');
+    if (editBtn) {
+      const p = (window._projects || []).find(x => x.id === +editBtn.dataset.editProj);
+      if (!p) return;
+      editingProject = p.id;
+      $('p-slug').value = p.slug; $('p-name').value = p.name;
+      $('p-status').value = p.status; $('p-visibility').value = p.visibility;
+      $('p-progress').value = p.progress; $('p-sort').value = p.sort;
+      $('p-summary').value = p.summary || ''; $('p-tech').value = (p.tech_stack || []).join(', ');
+      $('p-repo').value = p.repo_url || ''; $('p-demo').value = p.demo_url || '';
+      $('p-desc').value = p.description || '';
+      $('p-save').textContent = '保存修改';
+      $('p-note').textContent = `正在编辑：${p.name}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (logBtn) {
+      const p = (window._projects || []).find(x => x.id === +logBtn.dataset.logProj);
+      if (!p) return;
+      logProject = { id: p.id, name: p.name };
+      $('pl-target').textContent = `→ 目标项目：${p.name}`;
+      const res = await api('/api/admin/projects/' + p.id + '/logs');
+      $('pl-list').innerHTML = res.ok && res.data.length ? res.data.map(l => `
+        <div class="ws-item">
+          <div class="head"><b>${escapeHtml(l.title || '(无标题)')}</b><span class="meta">${escapeHtml(l.log_date)}</span></div>
+          <p>${escapeHtml(l.content)}</p>
+          <div class="ops"><button type="button" class="danger" data-del-plog="${l.id}">删除</button></div>
+        </div>`).join('') : '<p class="admin-note">这个项目还没有开发日志。</p>';
+      $('pl-target').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (delBtn) {
+      if (!confirm(`确定删除项目「${delBtn.dataset.projName}」及其全部开发日志？此操作不可恢复。`)) return;
+      await api('/api/admin/projects/' + delBtn.dataset.delProj, { method: 'DELETE' });
+      if (logProject && logProject.id === +delBtn.dataset.delProj) { logProject = null; $('pl-target').textContent = ''; }
+      if (editingProject === +delBtn.dataset.delProj) resetProjectForm();
+      loadProjects();
+    }
+  });
+  $('pl-save').addEventListener('click', async () => {
+    if (!logProject) { $('pl-note').textContent = '请先在项目列表点「日志」选择目标项目。'; return; }
+    const log_date = $('pl-date').value.trim() || new Date().toISOString().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(log_date)) { $('pl-note').textContent = '日期格式应为 2026-11-02。'; return; }
+    const res = await api(`/api/admin/projects/${logProject.id}/logs`, {
+      method: 'POST',
+      body: JSON.stringify({ title: $('pl-title').value.trim(), content: $('pl-content').value, log_date })
+    });
+    $('pl-note').classList.toggle('is-error', !res.ok);
+    $('pl-note').textContent = res.ok ? '已添加日志。' : apiError(res.data, '添加失败');
+    if (res.ok) {
+      $('pl-title').value = ''; $('pl-content').value = '';
+      document.querySelector(`[data-log-proj="${logProject.id}"]`)?.click();
+    }
+  });
+  $('pl-list').addEventListener('click', async e => {
+    const delBtn = e.target.closest('[data-del-plog]');
+    if (delBtn && logProject) {
+      if (!confirm('确定删除这条开发日志？')) return;
+      await api(`/api/admin/projects/${logProject.id}/logs/${delBtn.dataset.delPlog}`, { method: 'DELETE' });
+      document.querySelector(`[data-log-proj="${logProject.id}"]`)?.click();
+    }
   });
 
   /* ---------- Word / PDF 导入 ---------- */

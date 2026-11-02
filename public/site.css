@@ -445,3 +445,34 @@ a:focus-visible, button:focus-visible { border-radius: var(--r-s); }
   }
   .spinner { animation: none; }
 }
+
+/* ============================================================
+   P2 项目中心（v2.3）
+   ============================================================ */
+.project-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:24px; }
+.project-card { display:flex; min-height:250px; flex-direction:column; justify-content:space-between; gap:20px; border:1px solid var(--hairline); border-radius:var(--r-m); padding:var(--space-5); background:var(--glass-bg); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); box-shadow:var(--shadow-1), inset 0 1px 0 var(--highlight); transition:border-color var(--t-base) var(--ease), transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease); }
+.project-card:hover { border-color:var(--ink); transform:translateY(-4px); box-shadow:var(--shadow-2), inset 0 1px 0 var(--highlight); }
+.project-card-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.project-card h3 { margin-top:18px; font-size:21px; font-weight:500; line-height:1.3; letter-spacing:-.02em; }
+.project-card .project-summary { margin-top:10px; color:var(--sub); font-size:13px; line-height:1.65; }
+.project-card.is-hidden { display:none; }
+.project-status-badge { display:inline-block; padding:3px 12px; border-radius:var(--r-pill); font-size:12px; border:1px solid var(--hairline); color:var(--sub); background:var(--glass-bg-strong); }
+.project-status-badge[data-status="building"] { color:#0a84ff; border-color:rgba(10,132,255,.35); }
+.project-status-badge[data-status="maintained"] { color:#1d8a4e; border-color:rgba(29,138,78,.35); }
+.project-status-badge[data-status="archived"] { color:#8e8e93; border-style:dashed; }
+.project-tech { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.project-tech-chip { padding:3px 10px; border-radius:var(--r-pill); font-size:12px; background:rgba(0,0,0,.05); color:var(--sub); }
+.project-progress-wrap { display:flex; align-items:center; gap:12px; margin-top:16px; }
+.project-progress { flex:1; height:6px; border-radius:var(--r-pill); background:rgba(0,0,0,.07); overflow:hidden; }
+.project-progress-bar { height:100%; border-radius:var(--r-pill); background:linear-gradient(90deg, #0a84ff, #5ac8fa); transition:width var(--t-slow) var(--ease); }
+.project-progress-num { font-size:12px; color:var(--sub); min-width:34px; text-align:right; }
+.project-card-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.project-logs-title { margin:44px 0 18px; font-size:20px; }
+.project-log-item { border:1px solid var(--hairline); border-radius:var(--r-m); padding:16px 18px; margin-bottom:14px; background:var(--glass-bg); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); box-shadow:var(--shadow-1), inset 0 1px 0 var(--highlight); }
+.project-log-head { display:flex; justify-content:space-between; gap:10px; align-items:baseline; margin-bottom:8px; }
+.project-log-head time { font-size:12.5px; color:var(--sub); }
+.project-log-body { font-size:14px; line-height:1.7; color:var(--ink-2, #55555a); overflow-wrap:anywhere; }
+.project-log-body p { margin:0 0 8px; }
+@media (max-width:760px) {
+  .project-grid { grid-template-columns:1fr; }
+}

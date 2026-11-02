@@ -110,10 +110,10 @@
 <body class="page-body">
 <nav class="page-nav" aria-label="博客主导航">
   <a class="brand" href="/" aria-label="Y's Blog 首页"><svg viewBox="0 0 16 18" aria-hidden="true"><path d="M2 0h3.4L8 4.8 10.6 0H14L9.8 8.2V18H6.2V8.2L2 0z"/></svg><span data-setting="site_name">Y's Blog</span></a>
-  <div class="links" aria-label="博客分类"><a href="/">首页</a><a href="/articles.html">文章</a><a href="/messages.html">留言</a><a href="/about.html">关于</a></div>
+  <div class="links" aria-label="博客分类"><a href="/">首页</a><a href="/articles.html">文章</a><a href="/projects.html">项目</a><a href="/messages.html">留言</a><a href="/about.html">关于</a></div>
   <div class="actions"></div>
 </nav>
-<div class="mobile-menu" id="mobile-menu" aria-label="移动端博客导航"><a href="/">首页</a><a href="/articles.html">文章</a><a href="/messages.html">留言</a><a href="/about.html">关于</a></div>
+<div class="mobile-menu" id="mobile-menu" aria-label="移动端博客导航"><a href="/">首页</a><a href="/articles.html">文章</a><a href="/projects.html">项目</a><a href="/messages.html">留言</a><a href="/about.html">关于</a></div>
 
 <div class="token-gate" id="token-gate">
   <h1>管理后台</h1>
@@ -135,6 +135,7 @@
     <div class="side-group">
       <h2>内容管理</h2>
       <a href="#articles" data-panel-link="articles">文章</a>
+      <a href="#projects" data-panel-link="projects">项目</a>
       <a href="#categories" data-panel-link="categories">分类</a>
       <a href="#tags" data-panel-link="tags">标签</a>
       <a href="#messages" data-panel-link="messages">留言审核</a>
@@ -255,6 +256,51 @@
         <thead><tr><th>标题</th><th>分类</th><th>日期</th><th>阅读</th><th></th></tr></thead>
         <tbody id="article-rows"></tbody>
       </table>
+    </section>
+
+    <!-- 内容管理：项目 -->
+    <section data-panel="projects" class="hidden">
+      <div class="admin-form" id="project-editor">
+        <div class="row">
+          <label>Slug（留空自动生成）<input id="p-slug" placeholder="留空 = 根据名称自动生成" /></label>
+          <label>项目名称<input id="p-name" placeholder="如：生活全能工作台" /></label>
+        </div>
+        <div class="row">
+          <label>状态<select id="p-status"><option value="idea">构想中</option><option value="building">开发中</option><option value="maintained">维护中</option><option value="archived">已归档</option></select></label>
+          <label>可见性<select id="p-visibility"><option value="public">公开</option><option value="private">私密</option></select></label>
+          <label>进度（0-100）<input id="p-progress" type="number" min="0" max="100" value="0" /></label>
+          <label>排序（小的在前）<input id="p-sort" type="number" value="0" /></label>
+        </div>
+        <label>一句话摘要<input id="p-summary" placeholder="显示在项目卡片上的介绍" /></label>
+        <label>技术栈（逗号分隔）<input id="p-tech" placeholder="Python, SQLite, Nginx" /></label>
+        <div class="row">
+          <label>仓库链接<input id="p-repo" placeholder="https://github.com/..." /></label>
+          <label>演示链接<input id="p-demo" placeholder="https://..." /></label>
+        </div>
+        <label>详细介绍（HTML）<textarea id="p-desc" placeholder="<p>这个项目解决什么问题……</p>"></textarea></label>
+        <div class="form-actions">
+          <button class="primary" id="p-save" type="button">保存项目</button>
+          <button class="ghost" id="p-reset" type="button">清空表单（新建模式）</button>
+          <span class="admin-note" id="p-note"></span>
+        </div>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>项目</th><th>状态</th><th>进度</th><th>可见性</th><th></th></tr></thead>
+        <tbody id="project-rows"></tbody>
+      </table>
+      <div class="admin-form" style="margin-top:28px;">
+        <h3 style="margin:0;font-size:15px;">开发日志 <span class="admin-note" id="pl-target" style="display:inline;"></span></h3>
+        <div class="row">
+          <label>日期<input id="pl-date" placeholder="2026-11-02" /></label>
+          <label>标题<input id="pl-title" placeholder="如：完成登录模块" /></label>
+        </div>
+        <label>内容<textarea id="pl-content" class="short"></textarea></label>
+        <div class="form-actions">
+          <button class="primary" id="pl-save" type="button">添加日志</button>
+          <span class="admin-note" id="pl-note"></span>
+        </div>
+        <div id="pl-list"></div>
+      </div>
     </section>
 
     <!-- 内容管理：分类 -->

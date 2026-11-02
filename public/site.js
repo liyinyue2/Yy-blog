@@ -151,6 +151,45 @@
         }
       }
 
+      /* ---------- 项目中心 ---------- */
+      const projectList = document.getElementById('project-list');
+      if (projectList) {
+        const STATUS_LABELS = { idea: '构想中', building: '开发中', maintained: '维护中', archived: '已归档' };
+        let activeStatus = 'all';
+        const renderProjects = list => {
+          projectList.innerHTML = list.length ? list.map(p => `
+            <article class="project-card" data-status="${escapeHtml(p.status)}">
+              <div>
+                <div class="project-card-top">
+                  <span class="project-status-badge" data-status="${escapeHtml(p.status)}">${STATUS_LABELS[p.status] || escapeHtml(p.status)}</span>
+                  ${p.visibility === 'private' ? '' : ''}
+                </div>
+                <h3>${escapeHtml(p.name)}</h3>
+                <p class="project-summary">${escapeHtml(p.summary)}</p>
+                ${(p.tech_stack || []).length ? `<div class="project-tech">${p.tech_stack.map(t => `<span class="project-tech-chip">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+                <div class="project-progress-wrap"><div class="project-progress"><div class="project-progress-bar" style="width:${+p.progress || 0}%"></div></div><span class="project-progress-num">${+p.progress || 0}%</span></div>
+              </div>
+              <div class="project-card-foot">
+                <a class="read-link" href="/projects/${encodeURIComponent(p.slug)}.html">项目详情 <span>↗</span></a>
+                ${p.demo_url ? `<a class="read-link" href="${escapeHtml(p.demo_url)}" target="_blank" rel="noopener">演示 ↗</a>` : (p.repo_url ? `<a class="read-link" href="${escapeHtml(p.repo_url)}" target="_blank" rel="noopener">源码 ↗</a>` : '')}
+              </div>
+            </article>`).join('')
+            : '<p class="list-empty">还没有公开的项目。</p>';
+        };
+        const applyStatusFilter = () => {
+          document.querySelectorAll('#project-filters .topic-chip').forEach(chip =>
+            chip.classList.toggle('is-active', chip.dataset.status === activeStatus));
+          document.querySelectorAll('#project-list .project-card').forEach(card =>
+            card.classList.toggle('is-hidden', activeStatus !== 'all' && card.dataset.status !== activeStatus));
+        };
+        fetch('/api/public/projects').then(r => r.json()).then(list => {
+          renderProjects(list);
+          applyStatusFilter();
+        }).catch(() => { projectList.innerHTML = '<p class="list-empty">项目加载失败，请稍后刷新重试。</p>'; });
+        document.querySelectorAll('#project-filters .topic-chip').forEach(chip =>
+          chip.addEventListener('click', () => { activeStatus = chip.dataset.status; applyStatusFilter(); }));
+      }
+
       /* ---------- 站点设置应用 ---------- */
       const SOCIAL_LABELS = { wechat: '微信', qq: 'QQ', douyin: '抖音', github: 'GitHub' };
       const SOCIAL_FIELDS = ['wechat', 'qq', 'douyin', 'github'];

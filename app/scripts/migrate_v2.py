@@ -87,6 +87,37 @@ MIGRATIONS = [
     )""",
 ]
 
+PROJECT_MIGRATIONS = [
+    """CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        summary TEXT DEFAULT '',
+        description TEXT DEFAULT '',
+        tech_stack TEXT DEFAULT '[]',
+        status TEXT NOT NULL DEFAULT 'idea'
+            CHECK (status IN ('idea','building','maintained','archived')),
+        repo_url TEXT DEFAULT '',
+        demo_url TEXT DEFAULT '',
+        progress INTEGER NOT NULL DEFAULT 0,
+        cover_path TEXT DEFAULT '',
+        sort INTEGER NOT NULL DEFAULT 0,
+        visibility TEXT NOT NULL DEFAULT 'public'
+            CHECK (visibility IN ('public','private')),
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+    )""",
+    """CREATE TABLE IF NOT EXISTS project_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        title TEXT DEFAULT '',
+        content TEXT DEFAULT '',
+        log_date TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_project_logs_project ON project_logs(project_id)",
+]
+
 WORKSPACE_MIGRATIONS = [
     """CREATE TABLE IF NOT EXISTS workspace.notes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -209,6 +240,8 @@ def run(quiet: bool = False) -> None:
     for sql in MAIN_CLEANUP:
         conn.execute(sql)
     for sql in MIGRATIONS:
+        conn.execute(sql)
+    for sql in PROJECT_MIGRATIONS:
         conn.execute(sql)
     for sql in WORKSPACE_MIGRATIONS:
         conn.execute(sql)
