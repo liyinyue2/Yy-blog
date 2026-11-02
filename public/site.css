@@ -20,8 +20,8 @@
       --ok: #30a46c;
 
       /* -- 玻璃 -- */
-      --glass-bg: rgba(255,255,255,.62);
-      --glass-bg-strong: rgba(255,255,255,.82);
+      --glass-bg: rgba(255,255,255,.56);
+      --glass-bg-strong: rgba(255,255,255,.78);
       --glass-bg-dark: rgba(28,28,30,.72);       /* 深色玻璃（toast 等） */
       --glass-blur: saturate(180%) blur(24px);   /* 卡片/侧栏 */
       --glass-blur-thin: saturate(160%) blur(14px); /* 顶栏/悬浮层 */
@@ -50,6 +50,10 @@
       /* -- 交互状态 -- */
       --focus-ring: 0 0 0 3px rgba(10,132,255,.35);
 
+      /* -- 环境光斑（玻璃的"折射源"，白底上玻璃必须有它才可见）-- */
+      --ambient-1: rgba(10,132,255,.16);   /* iOS 蓝 */
+      --ambient-2: rgba(255,159,10,.12);   /* iOS 橙 */
+
       /* -- 旧变量映射（存量页面兼容层，禁止再新增硬编码引用）-- */
       --bg: var(--surface);
       --mute: var(--ink-3);
@@ -74,6 +78,21 @@
       --shadow-1: 0 1px 2px rgba(0,0,0,.40), 0 8px 24px rgba(0,0,0,.35);
       --shadow-2: 0 2px 6px rgba(0,0,0,.45), 0 20px 48px rgba(0,0,0,.40);
       --focus-ring: 0 0 0 3px rgba(10,132,255,.5);
+      --ambient-1: rgba(10,132,255,.20);
+      --ambient-2: rgba(191,90,242,.14);
+    }
+
+    /* -- 环境光斑：固定背景层，静态渲染一次，不参与滚动重绘 -- */
+    body::before, body::after {
+      content: ""; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%;
+    }
+    body::before {
+      width: 56vw; height: 56vw; min-width: 420px; min-height: 420px; top: -16vw; right: -12vw;
+      background: radial-gradient(closest-side, var(--ambient-1), transparent 72%);
+    }
+    body::after {
+      width: 48vw; height: 48vw; min-width: 380px; min-height: 380px; bottom: -14vw; left: -10vw;
+      background: radial-gradient(closest-side, var(--ambient-2), transparent 72%);
     }
     * { box-sizing:border-box; margin:0; padding:0; }
     html, body { height:100%; }
@@ -110,7 +129,7 @@
     .menu-toggle { display:none; align-items:center; justify-content:center; width:40px; height:38px; border:1px solid #111; border-radius:999px; background:transparent; color:#111; cursor:pointer; }
     .menu-toggle svg { width:16px; height:16px; fill:currentColor; }
     .mobile-menu { display:none; }
-    .content-shell { background:#fff; }
+    .content-shell { background:transparent; }
     .content-section { width:min(1100px, calc(100% - 40px)); margin:0 auto; padding:clamp(92px, 12vw, 164px) 0; }
     .section-kicker { margin-bottom:16px; color:var(--mute); font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; }
     .section-title { max-width:620px; font-size:clamp(30px, 4vw, 52px); font-weight:500; line-height:1.08; letter-spacing:-.045em; }
@@ -131,7 +150,7 @@
     .topic-chip:hover { border-color:#111; background:#111; color:#fff; transform:translateY(-1px); }
     .about-copy { color:var(--sub); font-size:15px; line-height:1.85; }
     .about-copy strong { color:#111; font-weight:500; }
-    .site-footer { border-top:1px solid #e8e8e5; background:#fff; }
+    .site-footer { border-top:1px solid var(--hairline); background:transparent; }
     .footer-inner { display:flex; width:min(1100px, calc(100% - 40px)); align-items:flex-end; justify-content:space-between; gap:30px; margin:0 auto; padding:34px 0 40px; }
     .footer-brand { font-size:15px; font-weight:600; }
     .footer-note { margin-top:10px; color:#999; font-size:12px; }
@@ -187,7 +206,7 @@
 
 
 /* Separate blog pages */
-.page-body { min-height:100vh; background:#fff; }
+.page-body { min-height:100vh; background:transparent; }
 .page-nav { position:sticky; top:0; z-index:40; display:flex; align-items:center; justify-content:center; gap:clamp(18px, 2.6vw, 40px); padding:14px 24px; font-size:13.5px; line-height:1; background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur-thin); backdrop-filter:var(--glass-blur-thin); border-bottom:1px solid var(--hairline); }
 .page-main { width:min(1100px, calc(100% - 40px)); margin:0 auto; padding:clamp(72px, 9vw, 130px) 0; }
 .page-head { display:flex; align-items:flex-end; justify-content:space-between; gap:32px; margin-bottom:56px; }
