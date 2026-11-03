@@ -1,5 +1,22 @@
 # 变更记录
 
+## 4.4.4 — 2026-11-03
+
+修复启动迁移清空音乐/工作台数据的缺陷（数据丢失级）。
+
+### 根因
+`app/scripts/migrate_v2.py` 的 `MAIN_CLEANUP` 用了未限定库名的
+`DROP TABLE IF EXISTS notes|todos|bookmarks|tracks`。该连接已 `ATTACH` workspace 与 music，
+未限定名会解析到被库：主库 blog.db 里没有这些表时，DROP 直接命中
+`workspace.notes/todos/bookmarks` 与 `music.tracks`，随后 `CREATE TABLE IF NOT EXISTS`
+又建回同名空表——表现为「文件与播放记录都在，曲目行却消失，审计日志无删除记录」。
+2026-11-03 部署到新服务器时首次启动即复现，确认与当天早上的曲目丢失同一原因。
+
+### 修复
+- 四条清理语句全部加 `main.` 前缀，只清主库误建表，不再穿透被库。
+- 新增回归脚本 `migrate_regression.py`：临时副本预置 music.tracks + workspace 三表数据 +
+  主库误建同名表，连续执行两次 `run()`，断言真实数据不被清空、主库误建表仍被清理、结果幂等。7/7 通过。
+
 ## 4.4.3 — 2026-11-03
 
 音乐页按钮与细节整体打磨。
