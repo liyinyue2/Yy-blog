@@ -1,0 +1,177 @@
+/* ============================================================
+   iOS 26 Liquid Glass 样式层
+   核心：中心通透（折射由 engine.js 接管 backdrop-filter），
+   质感来自 rim light（内侧高光）+ 柔和外阴影 —— 而非白雾 tint。
+   ============================================================ */
+
+/* 通用玻璃表面：rim light 是 iOS 玻璃的灵魂 */
+.lg-surface {
+  position: relative;
+  background: var(--lg-tint);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 1.5px 2px 2.5px -.5px rgba(255,255,255,.45),
+    inset -1px -1.5px 2px -.5px rgba(255,255,255,.25),
+    0 2px 10px rgba(0,0,0,.05),
+    0 12px 40px rgba(0,0,0,.07);
+  transition: background var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease),
+              transform var(--t-fast) var(--ease);
+}
+[data-theme="dark"] .lg-surface {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.12),
+    inset 1.5px 2px 2.5px -.5px rgba(255,255,255,.18),
+    inset -1px -1.5px 2px -.5px rgba(255,255,255,.08),
+    0 2px 8px rgba(0,0,0,.30),
+    0 12px 40px rgba(0,0,0,.35);
+}
+.lg-surface:active { /* 注意：禁止在 lg-surface 上写 transform，会覆盖外层的定位 transform */ }
+
+/* 磨砂降级（Safari / Firefox） */
+.lg-surface.lg-fallback {
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+}
+
+/* reduced transparency：退为实底 */
+@media (prefers-reduced-transparency: reduce) {
+  .lg-surface {
+    background: var(--glass-fallback) !important;
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    box-shadow: var(--shadow-1) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* ============ 导航玻璃小球（手势拖拽 + 回弹） ============ */
+.glass-nav {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap;
+  gap: clamp(2px, .8vw, 10px);
+  padding: 10px 14px;
+  font-size: 13.5px; line-height: 1;
+  border-radius: var(--r-m);
+  width: fit-content; margin-inline: auto;
+}
+/* 子项禁止收缩：fit-content 才能算准宽度（否则 brand 文字被压换行） */
+.glass-nav > * { flex-shrink: 0; }
+.glass-nav .nav-item {
+  position: relative; z-index: 2;
+  padding: 9px 15px; border-radius: var(--r-pill);
+  color: var(--ink-2); white-space: nowrap;
+  transition: color var(--t-fast) var(--ease);
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+/* 小球 = 选中项自身的背景层：由布局定位，不存在测量偏移 */
+.glass-nav .nav-item::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  border-radius: inherit; background: transparent;
+  box-shadow: none;
+  transition: background var(--t-base) var(--ease-spring), box-shadow var(--t-base) var(--ease-spring);
+}
+/* 悬停：每个标签都给出同样的淡玻璃反馈 */
+.glass-nav .nav-item:hover { color: var(--ink); }
+.glass-nav .nav-item:hover::before { background: var(--gbtn-bg-hover); box-shadow: var(--gbtn-rim); }
+.glass-nav .nav-item.is-active { color: var(--ink); font-weight: 600; }
+.glass-nav .nav-item.is-active::before {
+  background: var(--gbtn-bg-on);
+  box-shadow: var(--gbtn-rim-on), var(--gbtn-shadow-on);
+}
+
+/* ============ 玻璃控件层：全站按钮 / 标签 / 分段项 ============
+   与顶部导航同一语言：半透明白 + rim light + 柔和外阴影；
+   选中态用「小球」而非实色块。折射贴图仍只给导航条与小球，
+   控件走纯 CSS 玻璃（每个 createGlass 实例都会生成一张位移贴图
+   与一个 SVG 滤镜，几十个小按钮上跑会拖垮首帧）。 */
+
+button, .g-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 18px; border-radius: var(--r-pill);
+  background: var(--gbtn-bg); color: var(--ink-2);
+  font-size: 13.5px; line-height: 1.25; white-space: nowrap;
+  -webkit-backdrop-filter: var(--gbtn-blur); backdrop-filter: var(--gbtn-blur);
+  box-shadow: var(--gbtn-rim), var(--gbtn-shadow);
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+button:hover:not(:disabled), .g-btn:hover {
+  background: var(--gbtn-bg-hover); color: var(--ink);
+  transform: translateY(-1px);
+}
+button:active:not(:disabled), .g-btn:active { transform: translateY(0) scale(.985); }
+button:disabled, .g-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+/* 选中 / 当前项：白玻璃小球（对应导航里那颗被折射托起的球） */
+button.is-active, .g-btn.is-active, .g-btn[aria-current="page"] {
+  background: var(--gbtn-bg-on); color: var(--ink); font-weight: 600;
+  box-shadow: var(--gbtn-rim-on), var(--gbtn-shadow-on);
+}
+
+/* 危险操作：红调玻璃，保持同一 rim 语言 */
+button.danger, .g-btn.danger {
+  color: var(--danger); background: var(--gbtn-tint-danger);
+  box-shadow: inset 0 0 0 1px rgba(229,72,77,.28), var(--gbtn-shadow);
+}
+button.danger:hover:not(:disabled), .g-btn.danger:hover {
+  background: var(--gbtn-tint-danger-hover); color: var(--danger);
+}
+
+/* 主操作（提交 / 保存）：比默认更实一点，仍通透 */
+.g-btn--primary { background: var(--gbtn-bg-hover); color: var(--ink); font-weight: 500; }
+
+/* 尺寸档 */
+.g-btn--sm, button.g-btn--sm { padding: 6px 14px; font-size: 12.5px; }
+.g-btn--lg { padding: 13px 30px; font-size: 14px; }
+
+/* 标签 / 徽章：小号玻璃胶囊，非交互 */
+.g-tag {
+  display: inline-flex; align-items: center; padding: 4px 11px;
+  border-radius: var(--r-pill); font-size: 11.5px; line-height: 1.4;
+  background: var(--gbtn-bg); color: var(--ink-2);
+  -webkit-backdrop-filter: var(--gbtn-blur); backdrop-filter: var(--gbtn-blur);
+  box-shadow: var(--gbtn-rim);
+}
+.g-tag.danger { color: var(--danger); background: var(--gbtn-tint-danger); box-shadow: inset 0 0 0 1px rgba(229,72,77,.24); }
+.g-tag.accent { color: var(--accent); background: var(--gbtn-tint-accent); box-shadow: inset 0 0 0 1px rgba(10,132,255,.24); }
+/* 行内类型标记（技术笔记等）：与相邻文字保持基线对齐 */
+.kind-badge { margin-right: 8px; vertical-align: -1px; }
+
+/* ============ 选中球：全站唯一的「当前项」材质，切换时弹性平移 ============
+   容器挂 v-slide-ball 后由 JS 写目标位置，位移 / 尺寸变化交给 CSS 过渡，
+   ease-spring 的过冲即「弹性」。静态选中底色此时让位给球，避免两层白玻璃叠出发灰。 */
+.slide-ball {
+  position: absolute; left: 0; top: 0; z-index: 0;
+  width: 0; height: 0; border-radius: var(--r-pill);
+  background: var(--gbtn-bg-on);
+  box-shadow: var(--gbtn-rim-on), var(--gbtn-shadow-on);
+  -webkit-backdrop-filter: var(--gbtn-blur); backdrop-filter: var(--gbtn-blur);
+  pointer-events: none; opacity: 0;
+  transition: transform .52s var(--ease-spring), width .52s var(--ease-spring),
+              height .52s var(--ease-spring), opacity var(--t-fast) var(--ease);
+}
+/* JS 量到选中项才显形；量不到（无选中项 / 容器隐藏）时 JS 写内联 opacity:0 覆盖此条 */
+.has-ball .slide-ball { opacity: 1; }
+.has-ball > :not(.slide-ball) { position: relative; z-index: 1; }
+.has-ball .nav-item.is-active::before,
+.has-ball .rail-item.is-active,
+.has-ball .icon-btn.on,
+.has-ball .chip.is-active {
+  background: transparent; box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) { .slide-ball { transition: none; } }
+
+/* 焦点：用 outline 而非 box-shadow，避免覆盖玻璃自身的 rim */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 不支持透明材质时退为实底，保持可读 */
+@media (prefers-reduced-transparency: reduce) {
+  button, .g-btn, .g-tag {
+    background: var(--glass-fallback) !important;
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    box-shadow: inset 0 0 0 1px var(--hairline-strong) !important;
+  }
+}

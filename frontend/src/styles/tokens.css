@@ -1,0 +1,141 @@
+/* ============================================================
+   Y's Blog v3 · Design Tokens（自 site.css 1:1 迁移）
+   ============================================================ */
+:root {
+  /* 色彩 · 亮色（默认） */
+  --surface: #f5f5f7;
+  --surface-raised: #ffffff;
+  --ink: #1d1d1f;
+  --ink-2: #55555a;
+  --ink-3: #86868b;
+  --accent: #0a84ff;
+  --accent-ink: #ffffff;
+  --danger: #e5484d;
+  --ok: #30a46c;
+
+  /* 玻璃 */
+  --glass-bg: rgba(255,255,255,.46);
+  --glass-bg-strong: rgba(255,255,255,.72);
+  --glass-bg-dark: rgba(28,28,30,.72);
+  --glass-blur: saturate(200%) blur(28px);
+  --glass-blur-thin: saturate(180%) blur(18px);
+  --glass-fallback: rgba(255,255,255,.97);
+  --hairline: rgba(0,0,0,.08);
+  --hairline-strong: rgba(0,0,0,.14);
+  --highlight: rgba(255,255,255,.78);
+
+  /* 玻璃控件（按钮 / 标签 / 分段项）——与顶部导航同一质感语言 */
+  --gbtn-bg: rgba(255,255,255,.50);
+  --gbtn-bg-soft: rgba(255,255,255,.26); /* 成列排布的常态项：留白给选中球，否则两者都顶到 255 分不开 */
+  --gbtn-bg-hover: rgba(255,255,255,.74);
+  --gbtn-bg-on: rgba(255,255,255,.94);
+  --gbtn-blur: saturate(180%) blur(18px);
+  --gbtn-rim: inset 0 0 0 1px rgba(255,255,255,.52),
+              inset 1px 1.5px 1.5px -.5px rgba(255,255,255,.72),
+              inset -1px -1.5px 2px -.5px rgba(255,255,255,.34),
+              0 0 0 1px rgba(60,60,67,.07); /* 外描边：纯白底上玻璃唯一的可见边界 */
+  --gbtn-rim-on: inset 0 0 0 1px rgba(255,255,255,.85),
+                 inset 1.5px 2px 2.5px -.5px rgba(255,255,255,.95),
+                 inset -1px -1.5px 2.5px -.5px rgba(255,255,255,.5),
+                 0 0 0 1px rgba(60,60,67,.05);
+  --gbtn-shadow: 0 1px 3px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.055);
+  --gbtn-shadow-on: 0 2px 5px rgba(0,0,0,.07), 0 10px 26px rgba(0,0,0,.12);
+  --gbtn-tint-danger: rgba(229,72,77,.10);
+  --gbtn-tint-danger-hover: rgba(229,72,77,.18);
+  --gbtn-tint-accent: rgba(10,132,255,.12);
+  --focus-ring: 0 0 0 3px rgba(10,132,255,.35);
+
+  /* 几何 */
+  --r-s: 10px; --r-m: 16px; --r-l: 22px; --r-pill: 999px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+
+  /* 阴影 */
+  --shadow-1: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+  --shadow-2: 0 2px 6px rgba(0,0,0,.06), 0 20px 48px rgba(0,0,0,.10);
+
+  /* 动效 */
+  --t-fast: 150ms; --t-base: 250ms; --t-slow: 400ms;
+  --ease: cubic-bezier(.32,.72,0,1);
+  --ease-spring: cubic-bezier(.3,1.42,.42,1);
+
+  /* 字体 */
+  --font-ui: Inter, "Noto Sans SC", system-ui, sans-serif;
+  --fs-xs: 12px; --fs-s: 13px; --fs-m: 15px; --fs-l: 17px; --fs-xl: 22px;
+
+  /* 环境光斑（折射源） */
+  --ambient-1: rgba(10,132,255,.32);
+  --ambient-2: rgba(255,159,10,.24);
+  --ambient-3: rgba(191,90,242,.34); /* 左侧光斑：玻璃导航需要有色可折射才显形 */
+  --rail-bg: rgba(226,230,240,.58); /* 导航两栏的磨砂底：冷灰一档，白选中球才跳得出来 */
+
+  /* Liquid Glass */
+  --lg-tint: rgba(255,255,255,.06);       /* iOS 质感：极轻 tint，去白雾 */
+  --lg-tint-hover: rgba(255,255,255,.10);
+}
+
+[data-theme="dark"] {
+  --surface: #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --ink: #f5f5f7;
+  --ink-2: rgba(235,235,245,.72);
+  --ink-3: rgba(235,235,245,.45);
+  --glass-bg: rgba(44,44,46,.55);
+  --glass-bg-strong: rgba(44,44,46,.80);
+  --glass-bg-dark: rgba(20,20,22,.78);
+  --glass-fallback: rgba(28,28,30,.98);
+  --hairline: rgba(255,255,255,.12);
+  --hairline-strong: rgba(255,255,255,.20);
+  --highlight: rgba(255,255,255,.18);
+  --shadow-1: 0 1px 2px rgba(0,0,0,.40), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-2: 0 2px 6px rgba(0,0,0,.45), 0 20px 48px rgba(0,0,0,.40);
+  --lg-tint: rgba(28,28,30,.30);
+  --lg-tint-hover: rgba(28,28,30,.40);
+  --ambient-1: rgba(10,132,255,.20);
+  --ambient-2: rgba(191,90,242,.14);
+  --ambient-3: rgba(191,90,242,.22);
+  --rail-bg: rgba(58,58,62,.52);
+  /* 暗色玻璃控件：折射源来自环境光斑，tint 走深灰 */
+  --gbtn-bg: rgba(86,86,90,.42);
+  --gbtn-bg-soft: rgba(86,86,90,.26);
+  --gbtn-bg-hover: rgba(98,98,102,.60);
+  --gbtn-bg-on: rgba(120,120,128,.78);
+  --gbtn-rim: inset 0 0 0 1px rgba(255,255,255,.14),
+              inset 1px 1.5px 1.5px -.5px rgba(255,255,255,.20),
+              inset -1px -1.5px 2px -.5px rgba(255,255,255,.08),
+              0 0 0 1px rgba(255,255,255,.10);
+  --gbtn-rim-on: inset 0 0 0 1px rgba(255,255,255,.26),
+                 inset 1.5px 2px 2.5px -.5px rgba(255,255,255,.32),
+                 inset -1px -1.5px 2.5px -.5px rgba(255,255,255,.14),
+                 0 0 0 1px rgba(255,255,255,.16);
+  --gbtn-shadow: 0 1px 3px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.30);
+  --gbtn-shadow-on: 0 2px 6px rgba(0,0,0,.45), 0 10px 26px rgba(0,0,0,.40);
+  --gbtn-tint-danger: rgba(255,69,58,.18);
+  --gbtn-tint-danger-hover: rgba(255,69,58,.28);
+  --gbtn-tint-accent: rgba(10,132,255,.22);
+  --focus-ring: 0 0 0 3px rgba(10,132,255,.5);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--surface); color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+a { color: inherit; text-decoration: none; }
+button { border: 0; font: inherit; cursor: pointer; }
+
+/* 环境光斑 */
+body::before, body::after {
+  content: ""; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%;
+}
+body::before {
+  width: 72vw; height: 72vw; min-width: 520px; min-height: 520px; top: -20vw; right: -16vw;
+  background: radial-gradient(closest-side, var(--ambient-1), transparent 72%);
+}
+body::after {
+  width: 64vw; height: 64vw; min-width: 460px; min-height: 460px; bottom: -18vw; left: -14vw;
+  background: radial-gradient(closest-side, var(--ambient-2), transparent 72%);
+}

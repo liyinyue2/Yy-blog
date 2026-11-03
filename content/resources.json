@@ -1,0 +1,59 @@
+{
+  "_说明": "资源库数据源。改这个文件即生效，无需重启构建；kind 用于前台分类筛选。",
+  "items": [
+    {
+      "title": "Apple 人机界面指南",
+      "url": "https://developer.apple.com/design/human-interface-guidelines/",
+      "kind": "设计",
+      "note": "iOS / macOS 控件与材质的第一手规范，玻璃质感的取舍都从这里推。"
+    },
+    {
+      "title": "Figma Learn",
+      "url": "https://help.figma.com/",
+      "kind": "设计",
+      "note": "从自动布局到组件的官方教程，遇到具体操作直接查这里。"
+    },
+    {
+      "title": "Vue 3 文档（中文）",
+      "url": "https://cn.vuejs.org/guide/",
+      "kind": "前端",
+      "note": "组合式 API 与响应式细节；遇到边界行为先看官方说明。"
+    },
+    {
+      "title": "Vite 文档（中文）",
+      "url": "https://cn.vite.dev/guide/",
+      "kind": "前端",
+      "note": "开发服务器、构建配置与插件接口。"
+    },
+    {
+      "title": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/zh-CN/",
+      "kind": "前端",
+      "note": "CSS / DOM / 浏览器兼容性的底稿，标准写法以这里为准。"
+    },
+    {
+      "title": "Can I use",
+      "url": "https://caniuse.com/",
+      "kind": "前端",
+      "note": "新特性上线前先查支持率，决定要不要写降级。"
+    },
+    {
+      "title": "FastAPI 文档（中文）",
+      "url": "https://fastapi.tiangolo.com/zh/",
+      "kind": "后端",
+      "note": "依赖注入、Pydantic 模型与路由组织的权威参考。"
+    },
+    {
+      "title": "SQLite WAL 模式",
+      "url": "https://www.sqlite.org/wal.html",
+      "kind": "后端",
+      "note": "并发读写与 checkpoint 机制；损坏恢复的排查也看这篇。"
+    },
+    {
+      "title": "Playwright（Python）",
+      "url": "https://playwright.dev/python/docs/intro",
+      "kind": "工具",
+      "note": "无头浏览器截图与断言，视觉验证脚本都用它跑。"
+    }
+  ]
+}
