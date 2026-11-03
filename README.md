@@ -79,6 +79,7 @@ nginx 已配 SPA 回落（`try_files $uri $uri/ /index.html`）与 CSP（`img-sr
 - 已实装的空间分区：工作台、云文件、知识库、待办、番茄钟、项目中心、个人资料、账号与安全、
   界面设置、书签、AI 对话、系统状态，以及网站管理的 12 个面板。
 - AI 对话需要服务端 `.env` 配置 `AI_API_KEY / AI_BASE_URL / AI_MODEL`，未配置时页面会明确提示。
+- 音乐中心的歌单与最近播放保存在浏览器 localStorage（`ys-music-playlists-v1` / `ys-music-recent-v1`），换设备不共享。
 - 单管理员；文章与留言列表未分页；文章编辑器是 HTML 文本 + 预览，不是所见即所得。
 - 资源库内容为示例条目，替换 `content/resources.json` 即可。
 
