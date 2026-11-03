@@ -22,7 +22,14 @@ const currentPlaylist = computed(() =>
     ? playlists.value.find(p => 'playlist:' + p.id === view.value)
     : null)
 const listTracks = computed(() => (currentPlaylist.value ? currentPlaylist.value.tracks || [] : tracks.value))
-const counts = computed(() => Object.fromEntries(playlists.value.map(p => [p.id, p.count])))
+const counts = computed(() => ({
+  ...Object.fromEntries(playlists.value.map(p => [p.id, p.count])),
+  all: tracks.value.length,
+}))
+const plCover = id => {
+  const h = Math.abs(String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0) * 31) % 360
+  return { background: `linear-gradient(145deg, hsl(${h} 62% 62%), hsl(${(h + 50) % 360} 58% 44%))` }
+}
 
 const title = computed(() => {
   if (currentPlaylist.value) return currentPlaylist.value.name
@@ -72,7 +79,11 @@ onMounted(load)
           </div>
           <div class="ms-actions">
             <button v-if="view !== 'playlists'" type="button" class="g-btn--sm g-btn--primary"
-                    :disabled="!listTracks.length || state !== 'ok'" @click="playAll">播放全部</button>
+                    :disabled="!listTracks.length || state !== 'ok'" @click="playAll">
+              <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                <path d="M8.4 5.3c0-.9 1-1.5 1.8-1l9.1 5.9c.7.5.7 1.5 0 2l-9.1 5.9c-.8.5-1.8-.1-1.8-1z" fill="currentColor" />
+              </svg>播放全部
+            </button>
           </div>
         </div>
 
@@ -87,13 +98,17 @@ onMounted(load)
 
           <template v-else-if="currentPlaylist">
             <div class="pd-head">
-              <span class="pd-cover" :style="{ background: 'linear-gradient(135deg, hsl(212 62% 58%), hsl(262 58% 44%))' }">
+              <span class="pd-cover" :style="plCover(currentPlaylist.id)">
                 {{ currentPlaylist.name.slice(0, 1) }}
               </span>
               <div class="pd-info">
                 <h3>{{ currentPlaylist.name }}</h3>
                 <p class="sub">{{ listTracks.length }} 首</p>
-                <button type="button" class="g-btn--sm g-btn--primary" :disabled="!listTracks.length" @click="playAll">播放全部</button>
+                <button type="button" class="g-btn--sm g-btn--primary" :disabled="!listTracks.length" @click="playAll">
+                  <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                    <path d="M8.4 5.3c0-.9 1-1.5 1.8-1l9.1 5.9c.7.5.7 1.5 0 2l-9.1 5.9c-.8.5-1.8-.1-1.8-1z" fill="currentColor" />
+                  </svg>播放全部
+                </button>
               </div>
             </div>
             <TrackList :tracks="listTracks" :empty-text="emptyText" @play="playTrack" />
