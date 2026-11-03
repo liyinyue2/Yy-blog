@@ -44,9 +44,9 @@ const subscribe = async () => {
 <template>
   <main class="page-main">
     <header class="page-head">
-      <p class="section-kicker">About / 03</p>
+      <p class="section-kicker">About / 05</p>
       <h1>关于</h1>
-      <p class="page-desc">{{ intro || '一个在代码与设计之间来回探索的人的长期记录。' }}</p>
+      <p class="page-desc">{{ intro || '关于我、做过的事，以及联系我的方式。' }}</p>
     </header>
     <article class="article-card about-card" v-html="content || fallback"></article>
 
@@ -84,7 +84,8 @@ const subscribe = async () => {
   display: flex; justify-content: center; padding: 26px 20px; border-radius: var(--r-l);
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.28), inset 1.5px 2px 2px -.5px rgba(255,255,255,.55), 0 16px 44px rgba(0,0,0,.08);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.28), inset 1.5px 2px 2px -.5px rgba(255,255,255,.55),
+              0 0 0 1px rgba(60,60,67,.06), 0 16px 44px rgba(0,0,0,.08);
 }
 .copy-toast {
   margin: 14px auto 0; width: fit-content; padding: 10px 18px; border-radius: var(--r-pill);
@@ -101,9 +102,9 @@ const subscribe = async () => {
 }
 .sub-form input:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
 .sub-form button {
-  padding: 13px 30px; border-radius: var(--r-pill);
-  background: var(--ink); color: #fff; font-size: 13.5px; font-weight: 500;
+  padding: 13px 30px; font-size: 13.5px; font-weight: 500;
+  color: var(--ink); background: var(--gbtn-bg-hover);
 }
-.sub-form button:disabled { opacity: .5; }
+.sub-form button:hover:not(:disabled) { background: var(--gbtn-bg-on); transform: translateY(-2px); box-shadow: var(--gbtn-rim-on), var(--gbtn-shadow-on); }
 .form-note { margin-top: 12px; font-size: 12.5px; color: var(--ink-3); }
 </style>

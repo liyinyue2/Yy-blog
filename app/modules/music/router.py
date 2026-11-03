@@ -147,6 +147,16 @@ def list_public_tracks(q: str = "", artist: str = "", tag: str = "",
     return [dict(r) for r in conn.execute(sql, params)]
 
 
+@router.get("/public/music/now")
+def public_now_playing():
+    """公开「正在听」：只给最近一次播放的公开曲目，不暴露播放历史。"""
+    row = db.conn().execute(
+        "SELECT t.id, t.title, t.artist, t.album, t.duration, h.played_at"
+        " FROM music.play_history h JOIN music.tracks t ON t.id = h.track_id"
+        " WHERE t.visibility = 'public' ORDER BY h.id DESC LIMIT 1").fetchone()
+    return dict(row) if row else None
+
+
 @router.get("/public/music/stream/{tid}")
 def stream_public_track(tid: int, request: Request):
     """公开流媒体：private 曲目 403，不存在 404。"""

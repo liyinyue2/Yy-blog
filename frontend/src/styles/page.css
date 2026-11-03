@@ -28,6 +28,7 @@
     inset 0 0 0 1px rgba(255,255,255,.28),
     inset 1.5px 2px 2px -.5px rgba(255,255,255,.55),
     inset -1px -1.5px 2px -.5px rgba(255,255,255,.30),
+    0 0 0 1px rgba(60,60,67,.06), /* 外描边：白底上玻璃的唯一可见边界，与控件层同一语言 */
     0 2px 8px rgba(0,0,0,.05),
     0 16px 44px rgba(0,0,0,.08);
   transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
@@ -38,6 +39,7 @@
     inset 0 0 0 1px rgba(255,255,255,.13),
     inset 1.5px 2px 2px -.5px rgba(255,255,255,.2),
     inset -1px -1.5px 2px -.5px rgba(255,255,255,.09),
+    0 0 0 1px rgba(255,255,255,.08),
     0 2px 8px rgba(0,0,0,.3),
     0 16px 44px rgba(0,0,0,.35);
 }
@@ -47,6 +49,7 @@
     inset 0 0 0 1px rgba(255,255,255,.4),
     inset 1.5px 2px 2px -.5px rgba(255,255,255,.6),
     inset -1px -1.5px 2px -.5px rgba(255,255,255,.35),
+    0 0 0 1px rgba(60,60,67,.08),
     0 6px 16px rgba(0,0,0,.07),
     0 24px 60px rgba(0,0,0,.12);
 }
@@ -58,16 +61,18 @@
 /* ---- 筛选与搜索 ---- */
 .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
 .chip {
-  padding: 10px 20px; border-radius: var(--r-pill); font-size: 13.5px;
-  background: var(--glass-bg); border: 1px solid var(--hairline); color: var(--ink-2);
-  -webkit-backdrop-filter: var(--glass-blur-thin); backdrop-filter: var(--glass-blur-thin);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 1px 4px rgba(0,0,0,.05);
-  transition: all var(--t-fast) var(--ease);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border-radius: var(--r-pill); font-size: 13.5px; line-height: 1.25;
+  color: var(--ink-2); background: var(--gbtn-bg);
+  -webkit-backdrop-filter: var(--gbtn-blur); backdrop-filter: var(--gbtn-blur);
+  box-shadow: var(--gbtn-rim), var(--gbtn-shadow);
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
-.chip:hover { color: var(--ink); transform: translateY(-1px); }
+.chip:hover { color: var(--ink); background: var(--gbtn-bg-hover); transform: translateY(-1px); }
 .chip.is-active {
-  background: var(--ink); border-color: var(--ink); color: #fff;
-  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  color: var(--ink); font-weight: 600; background: var(--gbtn-bg-on);
+  box-shadow: var(--gbtn-rim-on), var(--gbtn-shadow-on);
 }
 
 .search-row { margin-bottom: 6px; }

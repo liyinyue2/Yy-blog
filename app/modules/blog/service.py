@@ -26,6 +26,11 @@ DEFAULT_SETTINGS = {
     "social_wechat": "",
     "social_qq": "",
     "social_douyin": "",
+    # 公开首页内容（头像/简介/公告/精选）——后台改一次，前台即生效
+    "home_avatar": "",
+    "home_bio": "记录思考，分享创造。这里放着我在前端、设计与日常工具里的长期实践。",
+    "site_announcement": "",
+    "home_featured": "",
 }
 
 
@@ -92,8 +97,25 @@ def list_categories() -> list[dict]:
 
 
 def list_public_messages() -> list[dict]:
+    """公开面只出审核通过的留言。"""
     return [dict(r) for r in db.conn().execute(
-        "SELECT id, name, content, reply, created_at FROM messages WHERE visible=1 ORDER BY id DESC LIMIT 200")]
+        "SELECT id, name, content, reply, created_at FROM messages"
+        " WHERE status='approved' ORDER BY id DESC LIMIT 200")]
+
+
+MSG_STATUSES = ("pending", "approved", "spam")
+SPAM_LINKS = 3          # 一条留言里外链数达到该值判为垃圾
+
+
+def _spam_status(conn, content: str) -> str:
+    """轻量内容过滤：外链堆砌或与前 20 条完全重复 → spam，其余进待审队列。
+    频率层面的恶意提交由接口限流负责，这里只管内容。"""
+    if len(re.findall(r"https?://", content)) >= SPAM_LINKS:
+        return "spam"
+    dup = conn.execute(
+        "SELECT COUNT(*) n FROM (SELECT content FROM messages ORDER BY id DESC LIMIT 20) WHERE content = ?",
+        (content,)).fetchone()["n"]
+    return "spam" if dup else "pending"
 
 
 def create_message(name: str, contact: str, content: str) -> dict:
@@ -103,9 +125,14 @@ def create_message(name: str, contact: str, content: str) -> dict:
     content = (content or "").strip()[:1000]
     if not content:
         raise HTTPException(status_code=400, detail="留言内容不能为空")
-    cur = conn.execute("INSERT INTO messages (name, contact, content) VALUES (?,?,?)", (name, contact, content))
+    status = _spam_status(conn, content)
+    cur = conn.execute(
+        "INSERT INTO messages (name, contact, content, status, visible) VALUES (?,?,?,?,?)",
+        (name, contact, content, status, 1 if status == "approved" else 0))
     conn.commit()
-    return {"ok": True, "id": cur.lastrowid, "message": "留言成功，感谢你的分享！"}
+    msg = ("留言已提交，博主审核通过后就会显示出来。" if status == "pending"
+           else "留言成功，感谢你的分享！")
+    return {"ok": True, "id": cur.lastrowid, "status": status, "message": msg}
 
 
 def subscribe(email: str) -> dict:
@@ -154,9 +181,13 @@ def admin_list_articles() -> list[dict]:
     return rows
 
 
-def admin_list_messages() -> list[dict]:
-    return [dict(r) for r in db.conn().execute(
-        "SELECT id, name, contact, content, reply, visible, created_at FROM messages ORDER BY id DESC")]
+def admin_list_messages(status: str = "") -> list[dict]:
+    sql = ("SELECT id, name, contact, content, reply, visible, status, created_at FROM messages")
+    params: list = []
+    if status in MSG_STATUSES:
+        sql += " WHERE status=?"
+        params.append(status)
+    return [dict(r) for r in db.conn().execute(sql + " ORDER BY id DESC LIMIT 500", params)]
 
 
 def admin_list_subscribers() -> list[dict]:
@@ -172,19 +203,32 @@ def admin_stats() -> dict:
         "tags": conn.execute("SELECT COUNT(*) n FROM tags").fetchone()["n"],
         "subscribers": conn.execute("SELECT COUNT(*) n FROM subscribers").fetchone()["n"],
         "messages": conn.execute("SELECT COUNT(*) n FROM messages").fetchone()["n"],
+        "pending_messages": conn.execute(
+            "SELECT COUNT(*) n FROM messages WHERE status='pending'").fetchone()["n"],
         "views": conn.execute("SELECT COALESCE(SUM(views),0) n FROM articles").fetchone()["n"],
     }
 
 
-def admin_update_message(mid: int, reply: str | None, visible: bool | None, user: str, ip: str) -> dict:
+def admin_update_message(mid: int, reply: str | None, visible: bool | None, user: str, ip: str,
+                         status: str | None = None) -> dict:
     conn = db.conn()
     fields, params = [], []
     if reply is not None:
         fields.append("reply=?")
         params.append(reply.strip()[:500])
-    if visible is not None:
+    if status is not None:
+        if status not in MSG_STATUSES:
+            raise HTTPException(status_code=400, detail="status 取值不合法")
+        fields.append("status=?")
+        params.append(status)
+        # visible 与 status 同步：v2 旧后台仍按 visible 语义工作
+        fields.append("visible=?")
+        params.append(1 if status == "approved" else 0)
+    elif visible is not None:
         fields.append("visible=?")
         params.append(1 if visible else 0)
+        fields.append("status=?")
+        params.append("approved" if visible else "pending")
     if not fields:
         raise HTTPException(status_code=400, detail="没有需要更新的字段")
     params.append(mid)
@@ -194,6 +238,23 @@ def admin_update_message(mid: int, reply: str | None, visible: bool | None, user
         raise HTTPException(status_code=404, detail="留言不存在")
     audit_log("message-update", f"id={mid} fields={','.join(f.rstrip('=') for f in fields)}", ip, user=user)
     return {"ok": True, "message": "已更新留言"}
+
+
+def admin_moderate_messages(ids: list[int], status: str, user: str, ip: str) -> dict:
+    """批量审核：一次请求改多条，避免逐条点。"""
+    if status not in MSG_STATUSES:
+        raise HTTPException(status_code=400, detail="status 取值不合法")
+    ids = [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()][:200]
+    if not ids:
+        raise HTTPException(status_code=400, detail="ids 不能为空")
+    conn = db.conn()
+    marks = ",".join("?" * len(ids))
+    cur = conn.execute(
+        f"UPDATE messages SET status=?, visible=? WHERE id IN ({marks})",
+        [status, 1 if status == "approved" else 0, *ids])
+    conn.commit()
+    audit_log("message-moderate", f"{status} x{cur.rowcount}", ip, user=user)
+    return {"ok": True, "changed": cur.rowcount, "message": f"已处理 {cur.rowcount} 条"}
 
 
 def admin_delete_message(mid: int, user: str, ip: str) -> dict:

@@ -11,7 +11,7 @@ from app.core.security import require_admin
 from app.modules.blog import convert, service
 from app.modules.blog.models import (ArticleBody, CategoryBody, CategoryUpdateBody,
                                      ConvertBody, MessagePostBody, MessageUpdateBody,
-                                     SubscribeBody)
+                                     ModerateBody, SubscribeBody)
 from app.modules.blog.templates import parse_post_path, render_not_found, render_post
 
 router = APIRouter(tags=["blog"])
@@ -149,15 +149,21 @@ def admin_delete_category(slug: str, request: Request, user: dict = Depends(requ
 
 
 @router.get("/api/admin/messages")
-def admin_messages(user: dict = Depends(require_admin)):
-    return service.admin_list_messages()
+def admin_messages(status: str = "", user: dict = Depends(require_admin)):
+    return service.admin_list_messages(status)
 
 
 @router.put("/api/admin/messages/{mid}")
 def admin_update_message(mid: int, body: MessageUpdateBody, request: Request,
                          user: dict = Depends(require_admin)):
     return service.admin_update_message(mid, body.reply, body.visible,
-                                        user["username"], client_ip(request))
+                                        user["username"], client_ip(request), body.status)
+
+
+@router.post("/api/admin/messages/moderate")
+def admin_moderate_messages(body: ModerateBody, request: Request,
+                            user: dict = Depends(require_admin)):
+    return service.admin_moderate_messages(body.ids, body.status, user["username"], client_ip(request))
 
 
 @router.delete("/api/admin/messages/{mid}")

@@ -33,6 +33,12 @@ class MessagePostBody(BaseModel):
 class MessageUpdateBody(BaseModel):
     reply: str | None = Field(default=None, max_length=600)
     visible: bool | None = None
+    status: str | None = Field(default=None, max_length=10)
+
+
+class ModerateBody(BaseModel):
+    ids: list[int] = Field(default_factory=list, max_length=200)
+    status: str = Field(min_length=1, max_length=10)
 
 
 class SubscribeBody(BaseModel):

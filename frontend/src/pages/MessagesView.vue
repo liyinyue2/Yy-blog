@@ -28,12 +28,13 @@ const send = async () => {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name.value || '匿名', contact: contact.value, content: text.value }),
     })
+    const data = await res.json().catch(() => ({}))
     if (res.ok) {
       name.value = ''; contact.value = ''; text.value = ''
-      note.value = '发送成功，感谢留言！'
-      setTimeout(() => { note.value = '' }, 2500)
+      note.value = data.message || '留言已提交。'
+      setTimeout(() => { note.value = '' }, 5000)
       load()
-    } else note.value = '发送失败，请稍后再试。'
+    } else note.value = data.error || data.detail || '发送失败，请稍后再试。'
   } catch { note.value = '网络异常，请稍后再试。' }
   sending.value = false
 }
@@ -43,9 +44,9 @@ onMounted(load)
 <template>
   <main class="page-main">
     <header class="page-head">
-      <p class="section-kicker">Voices / 02</p>
+      <p class="section-kicker">Voices / 03</p>
       <h1>留言板</h1>
-      <p class="page-desc">说点什么吧——一个想法、一句问候，或者只是打个招呼，都会被认真读到。</p>
+      <p class="page-desc">留下一个想法、一句问候，或只是打个招呼。</p>
     </header>
     <form class="msg-form" @submit.prevent="send">
       <div class="msg-row">
@@ -67,6 +68,7 @@ onMounted(load)
       </article>
       <p v-if="state === 'ok' && !messages.length" class="list-empty">还没有留言，来做第一个说话的人吧。</p>
       <p v-if="state === 'loading'" class="list-loading">正在加载…</p>
+      <p v-if="state === 'error'" class="list-empty">留言加载失败。<button type="button" class="chip" @click="load">重试</button></p>
     </div>
   </main>
 </template>
@@ -84,12 +86,10 @@ onMounted(load)
 .msg-form input::placeholder, .msg-form textarea::placeholder { color: var(--ink-3); }
 .msg-form input:focus, .msg-form textarea:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
 .msg-form button {
-  justify-self: start; padding: 13px 30px; border-radius: var(--r-pill);
-  background: var(--ink); color: #fff; font-size: 13.5px; font-weight: 500;
-  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  justify-self: start; padding: 13px 30px; font-size: 13.5px; font-weight: 500;
+  color: var(--ink); background: var(--gbtn-bg-hover);
 }
-.msg-form button:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
-.msg-form button:disabled { opacity: .5; }
+.msg-form button:hover:not(:disabled) { background: var(--gbtn-bg-on); transform: translateY(-2px); box-shadow: var(--gbtn-rim-on), var(--gbtn-shadow-on); }
 .form-note { font-size: 12.5px; color: var(--ink-3); }
 .msg-list { margin-top: 40px; display: grid; gap: 20px; }
 .msg-card { padding: 24px 28px; }

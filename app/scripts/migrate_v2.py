@@ -36,7 +36,8 @@ BLOG_SCHEMA = [
         contact TEXT DEFAULT '',
         content TEXT NOT NULL,
         reply TEXT DEFAULT '',
-        visible INTEGER DEFAULT 1,
+        visible INTEGER DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending',
         created_at TEXT DEFAULT (datetime('now', 'localtime'))
     )""",
     """CREATE TABLE IF NOT EXISTS settings (
@@ -277,6 +278,17 @@ def _ensure_todo_fields(conn) -> None:
         conn.execute("ALTER TABLE workspace.todos ADD COLUMN priority INTEGER NOT NULL DEFAULT 0")
 
 
+def _ensure_message_status(conn) -> None:
+    """留言审核三态：messages.status ∈ pending|approved|spam，启动自愈。
+    老数据按 visible 回填：visible=1 → approved；visible=0（博主手动隐藏过）→ 回到待审队列，
+    不直接判垃圾，避免把历史内容永久藏掉。"""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(messages)")}
+    if "status" not in cols:
+        conn.execute("ALTER TABLE messages ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'")
+        conn.execute("UPDATE messages SET status='approved' WHERE visible=1")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status)")
+
+
 def _ensure_file_starred(conn) -> None:
     """v2.3 P4：files.is_starred 收藏标记，启动自愈。"""
     cols = {r[1] for r in conn.execute("PRAGMA table_info(files)")}
@@ -305,6 +317,7 @@ def run(quiet: bool = False) -> None:
     for sql in AI_MIGRATIONS:
         conn.execute(sql)
     _ensure_track_visibility(conn)
+    _ensure_message_status(conn)
     _ensure_article_kind(conn)
     _ensure_todo_fields(conn)
     _ensure_file_starred(conn)

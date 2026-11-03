@@ -30,7 +30,7 @@ onMounted(load)
     <header class="page-head">
       <p class="section-kicker">Music / 04</p>
       <h1>音乐</h1>
-      <p class="page-desc">我常听的歌。</p>
+      <p class="page-desc">正在听的歌，和反复回放的那几首。</p>
     </header>
     <div class="msg-list article-list">
       <article

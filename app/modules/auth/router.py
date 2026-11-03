@@ -5,8 +5,8 @@ from pydantic import BaseModel, Field
 from app.core.audit import audit_log
 from app.core.database import db
 from app.core.ratelimit import client_ip, rate_hit, rate_limited
-from app.core.security import (create_access_token, create_refresh_token,
-                               decode_token, get_current_user, verify_password)
+from app.core.security import (create_access_token, create_refresh_token, decode_token,
+                               get_current_user, hash_password, verify_password)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -82,3 +82,32 @@ def logout(request: Request, user: dict = Depends(get_current_user)):
 @router.get("/me")
 def me(user: dict = Depends(get_current_user)):
     return user
+
+
+class PasswordBody(BaseModel):
+    old_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+@router.post("/password")
+def change_password(body: PasswordBody, request: Request,
+                    user: dict = Depends(get_current_user)):
+    """改自己的密码：需验证旧密码，失败计入限流（同 IP 15 分钟错 5 次锁定）。"""
+    ip = client_ip(request)
+    key = f"pwd-fail:{ip}"
+    if rate_limited(key, *LIMIT_LOGIN_FAIL):
+        audit_log("password-locked", user["username"], ip)
+        raise HTTPException(status_code=429, detail="失败次数过多，请 15 分钟后再试")
+    row = db.conn().execute(
+        "SELECT password_hash FROM users WHERE username = ?", (user["username"],)).fetchone()
+    if not row or not verify_password(body.old_password, row["password_hash"]):
+        rate_hit(key, *LIMIT_LOGIN_FAIL)
+        audit_log("password-bad-old", user["username"], ip)
+        raise HTTPException(status_code=400, detail="旧密码不正确")
+    if body.new_password == body.old_password:
+        raise HTTPException(status_code=400, detail="新密码不能与旧密码相同")
+    db.conn().execute("UPDATE users SET password_hash = ? WHERE username = ?",
+                      (hash_password(body.new_password), user["username"]))
+    db.conn().commit()
+    audit_log("password-changed", user["username"], ip)
+    return {"ok": True, "message": "密码已更新，请重新登录"}

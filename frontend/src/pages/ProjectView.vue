@@ -1,29 +1,28 @@
 <script setup>
-/** ProjectView — 项目详情（含开发日志） */
-import { ref, onMounted } from 'vue'
+/** ProjectView — 项目详情（/api/public/projects/{slug} 一次取回正文与开发日志） */
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { publicApi } from '../api/client'
+import { projectStatusLabel } from '../constants'
 
 const route = useRoute()
 const project = ref(null)
 const logs = ref([])
 const state = ref('loading')
 
-onMounted(async () => {
-  try {
-    const res = await fetch('/api/public/projects')
-    const list = Array.isArray(res) ? res : await res.json()
-    project.value = (Array.isArray(list) ? list : list.projects || [])
-      .find(p => p.slug === route.params.slug)
-    if (!project.value) throw new Error()
-    const lr = await fetch(`/api/public/projects/${project.value.id}/logs`).catch(() => null)
-    if (lr?.ok) {
-      const ld = await lr.json()
-      logs.value = Array.isArray(ld) ? ld : (ld.logs || [])
-    }
-    state.value = 'ok'
-    document.title = `${project.value.name} — Y's Blog`
-  } catch { state.value = 'error' }
-})
+const load = async slug => {
+  state.value = 'loading'
+  project.value = null
+  logs.value = []
+  const res = await publicApi('/api/public/projects/' + encodeURIComponent(slug))
+  if (!res.ok) { state.value = 'error'; return }
+  project.value = res.data
+  logs.value = res.data.logs || []
+  state.value = 'ok'
+  document.title = `${res.data.name} — Y's Blog`
+}
+onMounted(() => load(route.params.slug))
+watch(() => route.params.slug, s => { if (s) load(s) })
 </script>
 
 <template>
@@ -32,18 +31,18 @@ onMounted(async () => {
     <p v-else-if="state === 'error'" class="list-empty">项目不存在。<router-link class="back" to="/projects">← 返回项目列表</router-link></p>
     <template v-else>
       <header class="page-head">
-        <p class="section-kicker">Project · {{ project.status === 'building' ? '开发中' : project.status === 'maintained' ? '维护中' : project.status }}</p>
+        <p class="section-kicker">Project · {{ projectStatusLabel(project.status) }}</p>
         <h1>{{ project.name }}</h1>
         <p class="page-desc">{{ project.summary }}</p>
         <div class="tech" v-if="project.tech_stack?.length">
-          <span v-for="t in project.tech_stack" :key="t" class="chip">{{ t }}</span>
+          <span v-for="t in project.tech_stack" :key="t" class="g-tag">{{ t }}</span>
         </div>
       </header>
       <article class="post-body lg-panel" v-if="project.description" v-html="project.description"></article>
       <section class="logs" v-if="logs.length">
         <h2>开发日志</h2>
         <div v-for="log in logs" :key="log.id" class="article-card log-card">
-          <span class="card-meta">{{ (log.created_at || '').replace('T', ' ').slice(0, 16) }}</span>
+          <span class="card-meta">{{ log.log_date || '' }}<template v-if="log.title"> · {{ log.title }}</template></span>
           <p>{{ log.content }}</p>
         </div>
       </section>

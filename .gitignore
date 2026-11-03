@@ -1,17 +1,32 @@
 # 安全敏感文件 —— 永不入库
 .admin_token
-logs/
+.env
+.env.*
+!.env.example
 
-# 本地数据与运行产物
-blog.db
-__pycache__/
-*.pyc
+# 运行期数据（含用户数据，永不上传）
 data/
 uploads/
-logs/
-.env
-legacy/*.db*
-
-# 数据库备份（含用户数据，永不上传）
 backups/
+logs/
+*.db
+*.db-wal
+*.db-shm
+
+# Python 产物
+__pycache__/
+*.pyc
 .venv/
+.pytest_cache/
+
+# 前端产物与依赖
+frontend/node_modules/
+frontend/dist/
+node_modules/
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

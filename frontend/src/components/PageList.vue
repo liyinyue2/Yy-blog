@@ -1,6 +1,7 @@
 <script setup>
 /** PageList — 文章/笔记列表（对接 /api/articles，1:1 复刻原列表卡片） */
 import { ref, onMounted } from 'vue'
+import { vSlideBall } from '../directives/slideBall'
 
 const props = defineProps({ kind: { type: String, default: 'all' } })
 const articles = ref([])
@@ -35,7 +36,7 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="filters">
+    <div class="filters" v-slide-ball>
       <button
         v-for="k in kinds" :key="k.value"
         class="chip" :class="{ 'is-active': curKind === k.value }"
@@ -49,7 +50,10 @@ onMounted(load)
       <router-link v-for="a in articles" :key="a.slug" class="article-card" :to="`/post/${a.slug}`">
         <h3>{{ a.title }}</h3>
         <p>{{ a.summary || '点击阅读全文…' }}</p>
-        <span class="card-meta">{{ a.category_name || '' }}<i v-if="a.category_name && a.date"> · </i>{{ a.date || '' }}</span>
+        <span class="card-meta">
+          <span v-if="a.kind === 'note'" class="g-tag accent kind-badge">技术笔记</span>
+          {{ a.category_name || '' }}<i v-if="a.category_name && a.date">·</i>{{ a.date || '' }}
+        </span>
       </router-link>
       <p v-if="state === 'ok' && !articles.length" class="list-empty">还没有内容。</p>
       <p v-if="state === 'loading'" class="list-loading">正在加载…</p>

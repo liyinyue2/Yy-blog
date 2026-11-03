@@ -128,15 +128,17 @@ onBeforeUnmount(() => { ctrl?.destroy(); stopX?.(); stopY?.() })
 
 <style scoped>
 .hero-lens {
-  position: absolute; z-index: 5;
-  width: clamp(220px, 24vw, 320px); height: clamp(220px, 24vw, 320px);
-  right: clamp(24px, 12vw, 220px); top: clamp(140px, 24vh, 240px);
+  position: absolute; z-index: 2;
+  /* 压在文案层（.copy z-index 3）之下：透镜折射的是背景点阵，
+     标题永远清晰，任何视口宽度下都不会出现玻璃盖住文字的画面。 */
+  width: clamp(180px, 19vw, 262px); height: clamp(180px, 19vw, 262px);
+  right: clamp(18px, 4.5vw, 130px); top: clamp(150px, 26vh, 300px);
   display: grid; place-items: center;
   border-radius: 999px;
   cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .hero-lens span {
-  font-size: clamp(30px, 3.4vw, 44px); font-weight: 700;
+  font-size: clamp(22px, 2.4vw, 33px); font-weight: 700;
   letter-spacing: -.02em; color: var(--ink); pointer-events: none;
 }
 .hero-lens.is-grabbed { cursor: grabbing; }
