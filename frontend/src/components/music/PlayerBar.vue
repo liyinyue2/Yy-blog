@@ -21,7 +21,7 @@ const onVolume = e => player.setVolume(Number(e.target.value))
 </script>
 
 <template>
-  <div class="mp-bar" role="region" aria-label="播放控制">
+  <div class="mp-bar" data-ogui-design="liquid" data-ogui-appearance="light" data-ogui-glass="sheet" role="region" aria-label="播放控制">
     <div class="mp-now">
       <span v-if="s.current" class="cover" :style="coverStyle(s.current.id)" aria-hidden="true">
         {{ (s.current.title || '?').slice(0, 1) }}

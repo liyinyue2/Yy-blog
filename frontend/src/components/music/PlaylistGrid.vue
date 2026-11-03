@@ -13,7 +13,7 @@ const coverStyle = id => {
 
 <template>
   <div class="pl-grid">
-    <button v-for="p in playlists" :key="p.id" type="button" class="pl-card" @click="emit('open', p.id)">
+    <button v-for="p in playlists" :key="p.id" type="button" class="pl-card" data-ogui-design="liquid" data-ogui-appearance="light" data-ogui-glass @click="emit('open', p.id)">
       <span class="cover" :style="coverStyle(p.id)">{{ p.name.slice(0, 1) }}</span>
       <b>{{ p.name }}</b>
       <span>{{ counts[p.id] || 0 }} 首</span>
