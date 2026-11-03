@@ -188,6 +188,19 @@ MUSIC_MIGRATIONS = [
         track_id INTEGER NOT NULL,
         played_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     )""",
+    """CREATE TABLE IF NOT EXISTS music.playlists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )""",
+    """CREATE TABLE IF NOT EXISTS music.playlist_tracks (
+        playlist_id INTEGER NOT NULL,
+        track_id INTEGER NOT NULL,
+        position INTEGER NOT NULL DEFAULT 0,
+        added_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+        PRIMARY KEY (playlist_id, track_id)
+    )""",
     # 注：SQLite 的 CREATE INDEX 无法跨 ATTACH schema 限定表名，且播放记录量级极小，不建索引
 ]
 
