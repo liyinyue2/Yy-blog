@@ -7,7 +7,7 @@ defineProps({
 const emit = defineEmits(['open'])
 const coverStyle = id => {
   const h = Math.abs(String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0) * 31) % 360
-  return { background: `linear-gradient(135deg, hsl(${h} 60% 60%), hsl(${(h + 50) % 360} 58% 44%))` }
+  return { background: `linear-gradient(145deg, hsl(${h} 62% 62%), hsl(${(h + 50) % 360} 58% 44%))` }
 }
 </script>
 
