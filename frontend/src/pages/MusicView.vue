@@ -98,12 +98,6 @@ onMounted(load)
 
 <template>
   <main class="page-main music-page">
-    <header class="page-head music-head">
-      <p class="section-kicker">Music / 04</p>
-      <h1>音乐</h1>
-      <p class="page-desc">正在听的歌，和反复回放的那几首。</p>
-    </header>
-
     <div class="music-shell">
       <MusicSidebar :view="view" :playlists="pl.playlists.value" :counts="counts"
                      @select="v => (view = v)" @create="openCreate" />
