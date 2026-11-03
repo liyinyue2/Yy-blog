@@ -7,6 +7,7 @@ import './styles/page.css'
 import './styles/admin.css'
 import './styles/space.css'
 import './styles/music.css'
+import './styles/music-material.css'
 
 /* 启动即应用主题偏好（界面设置里写入），避免首帧闪白 */
 try {
