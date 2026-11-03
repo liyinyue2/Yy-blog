@@ -97,7 +97,7 @@ router.beforeEach(to => {
 const TITLES = {
   dashboard: '工作台', notes: '知识库', files: '云文件', todos: '待办事项', pomodoro: '番茄钟', system: '系统状态',
   workspace: '网站概览', articles: '文章列表', categories: '分类管理', tags: '标签管理', messages: '留言管理',
-  subscribers: '订阅者', music: '音乐管理', projects: '项目', cloud: '云盘', settings: '站点设置',
+  subscribers: '订阅者', music: '音乐管理', playlists: '歌单', projects: '项目', cloud: '云盘', settings: '站点设置',
   audit: '审计日志', admins: '管理员', write: '写文章',
 }
 router.afterEach(to => {

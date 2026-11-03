@@ -11,6 +11,7 @@ import TagsPanel from './panels/TagsPanel.vue'
 import MessagesPanel from './panels/MessagesPanel.vue'
 import SubscribersPanel from './panels/SubscribersPanel.vue'
 import MusicPanel from './panels/MusicPanel.vue'
+import MusicPlaylistsPanel from './panels/MusicPlaylistsPanel.vue'
 import ProjectsPanel from './panels/ProjectsPanel.vue'
 import SettingsPanel from './panels/SettingsPanel.vue'
 import AuditPanel from './panels/AuditPanel.vue'
@@ -29,6 +30,7 @@ const PANELS = {
   messages: MessagesPanel,
   subscribers: SubscribersPanel,
   music: MusicPanel,
+  playlists: MusicPlaylistsPanel,
   projects: ProjectsPanel,
   cloud: [FileBrowser, { title: '云盘' }],
   settings: SettingsPanel,

@@ -35,6 +35,7 @@ const SECTIONS = [
       { label: '留言', to: '/space/site/messages' },
       { label: '订阅者', to: '/space/site/subscribers' },
       { label: '音乐', to: '/space/site/music' },
+      { label: '歌单', to: '/space/site/playlists' },
       { label: '项目', to: '/space/site/projects' },
       { label: '云盘', to: '/space/site/cloud' },
       { label: '站点设置', to: '/space/site/settings' },

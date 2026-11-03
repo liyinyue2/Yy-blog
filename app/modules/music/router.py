@@ -41,6 +41,14 @@ VISIBILITY_VALUES = {"public", "private"}
 _TRACK_COLS = "id, title, artist, album, duration, created_at"
 
 
+class PlaylistBody(BaseModel):
+    name: str
+
+
+class PlaylistTrackBody(BaseModel):
+    track_id: int
+
+
 class VisibilityBody(BaseModel):
     visibility: str = ""
 
@@ -147,6 +155,28 @@ def list_public_tracks(q: str = "", artist: str = "", tag: str = "",
     return [dict(r) for r in conn.execute(sql, params)]
 
 
+def _playlist_payload(conn, public_only: bool) -> list[dict]:
+    rows = conn.execute(
+        "SELECT id, name, created_at, updated_at FROM music.playlists ORDER BY id DESC").fetchall()
+    out = []
+    for r in rows:
+        sql = ("SELECT t.id, t.title, t.artist, t.album, t.duration, t.created_at, t.visibility "
+               "FROM music.playlist_tracks pt JOIN music.tracks t ON t.id = pt.track_id "
+               "WHERE pt.playlist_id = ?")
+        if public_only:
+            sql += " AND t.visibility = 'public'"
+        sql += " ORDER BY pt.position, pt.added_at"
+        tracks = [dict(x) for x in conn.execute(sql, (r["id"],)).fetchall()]
+        out.append({**dict(r), "count": len(tracks), "tracks": tracks})
+    return out
+
+
+@router.get("/public/music/playlists")
+def list_public_playlists() -> list[dict]:
+    """公开歌单：只暴露可见曲目；空歌单也返回（前台可显示"暂无歌曲"）。"""
+    return _playlist_payload(db.conn(), public_only=True)
+
+
 @router.get("/public/music/now")
 def public_now_playing():
     """公开「正在听」：只给最近一次播放的公开曲目，不暴露播放历史。"""
@@ -180,6 +210,84 @@ def list_all_tracks(limit: int = 100, offset: int = 0, user: dict = Depends(requ
     sql = (f"SELECT {_TRACK_COLS}, visibility FROM music.tracks"
            " ORDER BY id DESC LIMIT ? OFFSET ?")
     return [dict(r) for r in conn.execute(sql, (limit, max(0, offset)))]
+
+
+@router.get("/admin/music/playlists")
+def list_playlists(user: dict = Depends(require_admin)):
+    return _playlist_payload(db.conn(), public_only=False)
+
+
+@router.post("/admin/music/playlists")
+def create_playlist(body: PlaylistBody, request: Request, user: dict = Depends(require_admin)):
+    name = (body.name or "").strip()[:60]
+    if not name:
+        raise HTTPException(status_code=400, detail="歌单名称不能为空")
+    conn = db.conn()
+    cur = conn.execute("INSERT INTO music.playlists (name) VALUES (?)", (name,))
+    conn.commit()
+    audit_log("playlist-create", f"id={cur.lastrowid} {name}", client_ip(request), user=user["username"])
+    return {"ok": True, "id": cur.lastrowid}
+
+
+@router.put("/admin/music/playlists/{pid}")
+def rename_playlist(pid: int, body: PlaylistBody, request: Request, user: dict = Depends(require_admin)):
+    name = (body.name or "").strip()[:60]
+    if not name:
+        raise HTTPException(status_code=400, detail="歌单名称不能为空")
+    conn = db.conn()
+    cur = conn.execute(
+        "UPDATE music.playlists SET name=?, updated_at=datetime('now','localtime') WHERE id=?", (name, pid))
+    conn.commit()
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404, detail="歌单不存在")
+    audit_log("playlist-update", f"id={pid} {name}", client_ip(request), user=user["username"])
+    return {"ok": True}
+
+
+@router.delete("/admin/music/playlists/{pid}")
+def delete_playlist(pid: int, request: Request, user: dict = Depends(require_admin)):
+    """只删除歌单与关联，不删除曲库里的曲目。"""
+    conn = db.conn()
+    row = conn.execute("SELECT id FROM music.playlists WHERE id=?", (pid,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="歌单不存在")
+    conn.execute("DELETE FROM music.playlist_tracks WHERE playlist_id=?", (pid,))
+    conn.execute("DELETE FROM music.playlists WHERE id=?", (pid,))
+    conn.commit()
+    audit_log("playlist-delete", f"id={pid}", client_ip(request), user=user["username"])
+    return {"ok": True}
+
+
+@router.post("/admin/music/playlists/{pid}/tracks")
+def add_playlist_track(pid: int, body: PlaylistTrackBody, request: Request, user: dict = Depends(require_admin)):
+    if body.track_id < 1:
+        raise HTTPException(status_code=400, detail="曲目 id 无效")
+    conn = db.conn()
+    if not conn.execute("SELECT 1 FROM music.playlists WHERE id=?", (pid,)).fetchone():
+        raise HTTPException(status_code=404, detail="歌单不存在")
+    if not conn.execute("SELECT 1 FROM music.tracks WHERE id=?", (body.track_id,)).fetchone():
+        raise HTTPException(status_code=404, detail="曲目不存在")
+    pos = conn.execute(
+        "SELECT COALESCE(MAX(position), 0) + 1 n FROM music.playlist_tracks WHERE playlist_id=?", (pid,)
+    ).fetchone()["n"]
+    conn.execute(
+        "INSERT OR IGNORE INTO music.playlist_tracks (playlist_id, track_id, position) VALUES (?,?,?)",
+        (pid, body.track_id, pos))
+    conn.execute("UPDATE music.playlists SET updated_at=datetime('now','localtime') WHERE id=?", (pid,))
+    conn.commit()
+    audit_log("playlist-add-track", f"playlist={pid} track={body.track_id}", client_ip(request), user=user["username"])
+    return {"ok": True}
+
+
+@router.delete("/admin/music/playlists/{pid}/tracks/{tid}")
+def remove_playlist_track(pid: int, tid: int, request: Request, user: dict = Depends(require_admin)):
+    conn = db.conn()
+    cur = conn.execute("DELETE FROM music.playlist_tracks WHERE playlist_id=? AND track_id=?", (pid, tid))
+    conn.commit()
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404, detail="该歌单里没有这首曲目")
+    audit_log("playlist-remove-track", f"playlist={pid} track={tid}", client_ip(request), user=user["username"])
+    return {"ok": True}
 
 
 @router.post("/admin/music/upload")
@@ -272,6 +380,7 @@ def delete_track(tid: int, request: Request, user: dict = Depends(require_admin)
     conn.execute("DELETE FROM taggables WHERE entity_type='track' AND entity_id=?", (tid,))
     conn.execute("DELETE FROM music.track_favorites WHERE track_id=?", (tid,))
     conn.execute("DELETE FROM music.play_history WHERE track_id=?", (tid,))
+    conn.execute("DELETE FROM music.playlist_tracks WHERE track_id=?", (tid,))
     conn.execute("DELETE FROM music.tracks WHERE id = ?", (tid,))
     conn.commit()
     audit_log("music-delete", f"id={tid}", client_ip(request), user=user["username"])
