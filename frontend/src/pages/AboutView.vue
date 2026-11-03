@@ -24,6 +24,10 @@ const onCopied = label => {
   copied.value = `${label} 已复制到剪贴板`
   setTimeout(() => { copied.value = '' }, 2200)
 }
+const onCopyFailed = label => {
+  copied.value = `${label} 复制失败，请手动复制`
+  setTimeout(() => { copied.value = '' }, 2600)
+}
 
 const subscribe = async () => {
   const v = email.value.trim()
@@ -54,7 +58,7 @@ const subscribe = async () => {
       <h2>找到我</h2>
       <p class="about-social-hint">点击即可复制，或跳转到对应主页。</p>
       <div class="about-social-panel">
-        <SocialLinks @copied="onCopied" />
+        <SocialLinks @copied="onCopied" @copyfailed="onCopyFailed" />
       </div>
       <transition name="toast-in">
         <div v-if="copied" class="copy-toast">{{ copied }}</div>

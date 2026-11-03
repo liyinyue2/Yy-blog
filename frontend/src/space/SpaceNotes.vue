@@ -2,6 +2,7 @@
 /** 知识库 —— 私人笔记（/api/workspace/notes，富文本入库前服务端清洗） */
 import { ref, onMounted } from 'vue'
 import { api, asList, errOf } from '../api/client'
+import { confirmAsk } from '../composables/useConfirm'
 
 const notes = ref([])
 const total = ref(0)
@@ -32,8 +33,11 @@ const save = async () => {
   if (r.ok) { close(); load() }
 }
 const del = async n => {
-  if (!confirm(`删除笔记「${n.title || '(无标题)'}」？不可恢复。`)) return
+  if (!(await confirmAsk({
+    title: '删除笔记', text: '删除后不可恢复。', detail: n.title || '(无标题)', ok: '删除',
+  }))) return
   await api('/api/workspace/notes/' + n.id, { method: 'DELETE' })
+  close()
   load()
 }
 const shown = () => {

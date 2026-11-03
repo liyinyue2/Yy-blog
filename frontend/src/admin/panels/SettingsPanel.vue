@@ -26,16 +26,19 @@ const GROUPS = {
   about: ['about_intro', 'about_content'],
   social: ['social_github', 'social_wechat', 'social_qq', 'social_douyin'],
 }
+/* 库里没存过的键显示前台实际生效的兜底文案，避免"后台空白、前台有字"。
+   保存也提交这份有效值——否则会把空串写回库，改了等于没改。 */
+const value = k => settings.value[k] || FALLBACK[k] || ''
 const save = async key => {
-  const payload = Object.fromEntries(GROUPS[key].map(k => [k, settings.value[k] ?? '']))
+  const payload = Object.fromEntries(GROUPS[key].map(k => [k, value(k)]))
   const r = await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) })
   saved.value = { ...saved.value, [key]: r.ok ? '已保存。' : errOf(r.data, '保存失败') }
   setTimeout(() => { saved.value = { ...saved.value, [key]: '' } }, 2600)
   if (r.ok) load()
 }
-/* 库里没存过的键显示前台实际生效的兜底文案，避免"后台空白、前台有字"。
-   保存即把这份文案落库，从此以库为准。 */
-const f = k => ({ value: settings.value[k] || FALLBACK[k] || '', input: e => { settings.value = { ...settings.value, [k]: e.target.value } } })
+/* v-bind 的对象里，事件必须写成 onInput 才会被当成监听器；
+   写成 input 只是一个无效属性，改字不会进状态（保存永远是旧值）。 */
+const f = k => ({ value: value(k), onInput: e => { settings.value = { ...settings.value, [k]: e.target.value } } })
 onMounted(load)
 </script>
 
