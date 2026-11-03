@@ -205,11 +205,14 @@ MUSIC_MIGRATIONS = [
 ]
 
 # 仅清理曾误建到主库的工作台/音乐表。files 属于主库，绝不能 DROP。
+# 必须带 main. 前缀：本连接 ATTACH 了 workspace / music，未限定名会解析到被库，
+# 把 music.tracks、workspace.notes 等真实数据表 DROP 掉（随后 CREATE IF NOT EXISTS
+# 又建回空表，表现为"数据静默清空"）。
 MAIN_CLEANUP = [
-    "DROP TABLE IF EXISTS notes",
-    "DROP TABLE IF EXISTS todos",
-    "DROP TABLE IF EXISTS bookmarks",
-    "DROP TABLE IF EXISTS tracks",
+    "DROP TABLE IF EXISTS main.notes",
+    "DROP TABLE IF EXISTS main.todos",
+    "DROP TABLE IF EXISTS main.bookmarks",
+    "DROP TABLE IF EXISTS main.tracks",
 ]
 
 
