@@ -73,6 +73,25 @@ def list_articles(q: str = "", category: str = "", tag: str = "", kind: str = ""
     return rows
 
 
+def views_of(slug: str) -> dict:
+    conn = db.conn()
+    row = conn.execute("SELECT views FROM articles WHERE slug=?", (slug,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="文章不存在")
+    return {"views": row["views"] or 0}
+
+
+def bump_views(slug: str) -> dict:
+    """阅读数自增。独立成 POST，避免 GET 详情带副作用（也便于前端只上报一次）。"""
+    conn = db.conn()
+    row = conn.execute("SELECT id, views FROM articles WHERE slug=?", (slug,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="文章不存在")
+    conn.execute("UPDATE articles SET views = COALESCE(views,0) + 1 WHERE id=?", (row["id"],))
+    conn.commit()
+    return {"views": (row["views"] or 0) + 1}
+
+
 def get_article(slug: str) -> dict:
     conn = db.conn()
     row = conn.execute(
@@ -344,7 +363,7 @@ def save_article(old_slug: str | None, data, user: str, ip: str) -> dict:
         audit_log("db-error", f"save-article {slug}", ip, user=user)
         raise HTTPException(status_code=500, detail="保存失败，请稍后再试")
 
-    action = "更新" if old_slug else "创建"
+    action = "update" if old_slug else "create"  # 与其余审计动作统一用英文动词
     audit_log(f"article-{action}", slug, ip, user=user)
     return {"ok": True, "message": f"已{action}文章：{title}", "slug": slug,
             "url": f"/post-{slug}.html", "auto_slug": auto_slug}

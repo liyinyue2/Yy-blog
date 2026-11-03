@@ -39,6 +39,14 @@ def articles(q: str = "", category: str = "", tag: str = "", kind: str = ""):
     return service.list_articles(q=q, category=category, tag=tag, kind=kind)
 
 
+@router.post("/api/articles/{slug}/view")
+def article_view(slug: str, request: Request):
+    """阅读数上报：同一 IP + 同一篇 20 秒内只记一次，避免刷新与脚本刷量。"""
+    if rate_hit(f"view:{client_ip(request)}:{slug}", 20, 1):
+        return service.views_of(slug)
+    return service.bump_views(slug)
+
+
 @router.get("/api/articles/{slug}")
 def article_detail(slug: str):
     return service.get_article(slug)
