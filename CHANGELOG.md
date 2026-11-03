@@ -1,5 +1,27 @@
 # 变更记录
 
+## 4.4.0 — 2026-11-03
+
+音乐页接入 OpenGlass UI 的液态玻璃材质。
+
+### 关于兼容性
+- OpenGlass UI 是 React 组件库（peerDependencies: react>=18 / react-dom>=18），
+  本项目是 Vue 3.5，**不能直接安装其组件**，否则会引入第二套框架运行时。
+- 采用其发布的、与框架无关的 CSS 材质层（MIT）：`dist/styles.css` 中的液态 token
+  与镜面描边规则，抽成 `frontend/src/styles/open-glass-liquid.css` 并在音乐页按属性启用。
+- 未新增任何 npm 依赖；未改动其算法，只通过它公开的乘数调参。
+
+### 视觉
+- 主面板 / 播放器使用 `--ogui-lg-sheet` 填充与 `--ogui-lg-blur-heavy`
+  （blur + saturate 1.8 + brightness），投影用 `--ogui-lg-lift-high`。
+- 边缘高光改用 OpenGlass 的 conic 镜面环（遮罩裁出 1px 边），叠加 `--ogui-lg-rim` 透镜光与 `--ogui-lg-bloom`。
+- 播放器单独一档更亮的 sheet 与更强投影，与面板分层；选中曲目行加同源镜面环。
+- 保留原背景与布局：面板仍整屏贴边（0,0,100vw,100svh），播放栏仍悬浮。
+
+### 边界
+- 未改后台、接口、数据库、播放逻辑与路由；其余页面无任何 `data-ogui-*` 元素（实测为 0）。
+- 许可与出处见 `THIRD-PARTY.md`。
+
 ## 4.3.0 — 2026-11-03
 
 音乐中心：公开页只读，歌单管理搬进数字空间（服务端存储）。

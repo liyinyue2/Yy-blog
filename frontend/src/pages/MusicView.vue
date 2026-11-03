@@ -59,8 +59,8 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="page-main music-page">
-    <div class="music-shell">
+  <main class="page-main music-page" data-ogui-design="liquid" data-ogui-appearance="light">
+    <div class="music-shell" data-ogui-design="liquid" data-ogui-appearance="light" data-ogui-glass="sheet">
       <MusicSidebar :view="view" :playlists="playlists" :counts="counts"
                      @select="v => (view = v)" />
 
