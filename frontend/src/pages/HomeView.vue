@@ -16,6 +16,10 @@ const onCopied = label => {
   copied.value = `${label} 已复制到剪贴板`
   setTimeout(() => { copied.value = '' }, 2200)
 }
+const onCopyFailed = label => {
+  copied.value = `${label} 复制失败，请手动复制`
+  setTimeout(() => { copied.value = '' }, 2600)
+}
 </script>
 
 <template>
@@ -29,7 +33,7 @@ const onCopied = label => {
       <div class="cta"><router-link to="/articles">阅读最新文章</router-link></div>
     </div>
     <div class="socials-wrap">
-      <SocialLinks @copied="onCopied" />
+      <SocialLinks @copied="onCopied" @copyfailed="onCopyFailed" />
       <transition name="toast-in">
         <div v-if="copied" class="copy-toast">{{ copied }}</div>
       </transition>

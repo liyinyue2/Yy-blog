@@ -28,12 +28,33 @@ onMounted(async () => {
 })
 
 const isLink = v => /^https?:\/\//i.test(v)
-const openOrCopy = item => {
-  if (isLink(item.value)) window.open(item.value, '_blank', 'noopener')
-  else {
-    navigator.clipboard?.writeText(item.value)
-    emit('copied', LABELS[item.key])
-  }
+
+/* 非安全上下文（http、部分内嵌浏览器）没有 navigator.clipboard，
+   直接调用会抛未处理的 Promise 拒绝；这里做可用性判断 + 选区复制兜底。 */
+const copyText = async text => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch { /* 权限被拒时继续走兜底 */ }
+  try {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.cssText = 'position:fixed;top:-1000px;left:0;opacity:0'
+    document.body.appendChild(ta)
+    ta.select()
+    const ok = document.execCommand('copy')
+    ta.remove()
+    return ok
+  } catch { return false }
+}
+
+const openOrCopy = async item => {
+  if (isLink(item.value)) { window.open(item.value, '_blank', 'noopener'); return }
+  const ok = await copyText(item.value)
+  emit(ok ? 'copied' : 'copyfailed', LABELS[item.key])
 }
 </script>
 

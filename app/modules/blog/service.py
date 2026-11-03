@@ -364,19 +364,30 @@ def delete_article(slug: str, user: str, ip: str) -> dict:
 
 def create_category(data, user: str, ip: str) -> dict:
     conn = db.conn()
-    slug = (data.slug or "").strip()[:64]
     name = (data.name or "").strip()[:50]
     desc = (data.description or "").strip()[:300]
-    if not SLUG_RE.match(slug):
-        raise HTTPException(status_code=400, detail="slug 只能包含中文、字母、数字和中划线")
     if not name:
         raise HTTPException(status_code=400, detail="分类名称不能为空")
-    if conn.execute("SELECT id FROM categories WHERE slug=?", (slug,)).fetchone():
-        raise HTTPException(status_code=400, detail=f"slug 已存在：{slug}")
+
+    # 与文章一致：留空按名称生成 slug（表单上写的就是这个承诺），显式写错的仍然拒绝
+    raw = (data.slug or "").strip()[:64]
+    auto_slug = not raw
+    if auto_slug:
+        raw = re.sub(r"[^\w-]+", "", name.lower().replace(" ", "-"), flags=re.UNICODE).strip("-")[:40] or "category"
+    slug = raw
+    if not SLUG_RE.match(slug):
+        raise HTTPException(status_code=400, detail="slug 只能包含中文、字母、数字和中划线")
+    for i in range(2, 100):
+        if not conn.execute("SELECT 1 FROM categories WHERE slug=?", (slug,)).fetchone():
+            break
+        if not auto_slug:
+            raise HTTPException(status_code=400, detail=f"slug 已存在：{slug}")
+        slug = f"{raw}-{i}"
+
     conn.execute("INSERT INTO categories (slug, name, description) VALUES (?,?,?)", (slug, name, desc))
     conn.commit()
     audit_log("category-create", slug, ip, user=user)
-    return {"ok": True, "message": f"已创建分类：{name}"}
+    return {"ok": True, "message": f"已创建分类：{name}", "slug": slug}
 
 
 def update_category(slug: str, data, user: str, ip: str) -> dict:

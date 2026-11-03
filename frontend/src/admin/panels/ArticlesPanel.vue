@@ -56,10 +56,13 @@ const startEdit = async a => {
   const r = await api('/api/articles/' + encodeURIComponent(a.slug))
   if (!r.ok) { note.value = errOf(r.data, '读取文章详情失败'); return }
   const d = r.data
+  /* 详情里的 date 是展示格式（2026.10.28），input[type=date] 只认 ISO，用 published_at 兜底 */
+  const iso = String(d.published_at || '').slice(0, 10)
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : String(d.date || '').replace(/\./g, '-')
   editingSlug.value = a.slug
   form.value = {
     title: d.title || '', slug: d.slug || '', category: d.category_name || d.category || '',
-    summary: d.summary || '', content: d.content || '', date: d.date || d.published_at || '',
+    summary: d.summary || '', content: d.content || '', date,
     kind: d.kind || 'article', tags: (d.tags || []).join(', '),
   }
   note.value = ''

@@ -38,28 +38,24 @@ const routes = [
       // 个人空间
       { path: 'notes', name: 'space-notes', component: () => import('./space/SpaceNotes.vue') },
       { path: 'files', name: 'space-files', component: () => import('./space/SpaceFiles.vue') },
-      { path: 'projects-manage', ...plan('项目中心', 'S2',
-        ['projects / project_logs 表与全套管理接口', '公开项目页与详情页'],
-        ['空间内项目列表与开发日志编辑界面']) },
+      { path: 'projects-manage', name: 'space-projects', component: () => import('./space/SpaceProjects.vue') },
       { path: 'learning', ...plan('学习记录', 'S3', ['知识库笔记（notes）可承载内容'], ['学习记录表与统计视图']) },
 
       // 效率工具
       { path: 'todos', name: 'space-todos', component: () => import('./space/SpaceTodos.vue') },
       { path: 'pomodoro', name: 'space-pomodoro', component: () => import('./space/SpacePomodoro.vue') },
-      { path: 'bookmarks', ...plan('书签', 'S2', ['GET/POST/DELETE /api/workspace/bookmarks（URL 仅 http/https）'], ['空间内书签列表面板']) },
+      { path: 'bookmarks', name: 'space-bookmarks', component: () => import('./space/SpaceBookmarks.vue') },
       { path: 'calendar', ...plan('日程', 'S3', ['待办的 due 日期字段'], ['日程表、重复规则与月视图']) },
 
       // AI 中心
-      { path: 'ai/chat', ...plan('AI 对话', 'S2',
-        ['/api/space/ai/* 会话与消息表、SSE 流式转发', '密钥仅服务端 env，限流 60s/10'],
-        ['对话界面与流式渲染（需配置 AI_API_KEY 才能实测）']) },
+      { path: 'ai/chat', name: 'space-ai-chat', component: () => import('./space/SpaceAiChat.vue') },
       { path: 'ai/agents', ...plan('智能体', 'S4', ['AI 对话底座'], ['角色设定与工具调用']) },
       { path: 'ai/flows', ...plan('工作流', 'S4', ['AI 对话底座'], ['多步编排与定时触发']) },
 
       // 系统设置
-      { path: 'profile', ...plan('个人资料', 'S2', ['settings 已含 about_intro / about_content / social_*', '本轮新增 home_avatar / home_bio / site_announcement / home_featured'], ['独立的个人资料分区与头像上传']) },
-      { path: 'account', ...plan('账号与安全', 'S2', ['users 表 + bcrypt + JWT 双令牌 + require_role', '登录失败限流与审计'], ['改密码界面', '多管理员与角色管理']) },
-      { path: 'appearance', ...plan('界面设置', 'S2', ['tokens.css 亮暗双套已就绪（data-theme="dark" 预留）'], ['主题切换开关与持久化']) },
+      { path: 'profile', name: 'space-profile', component: () => import('./space/SpaceProfile.vue') },
+      { path: 'account', name: 'space-account', component: () => import('./space/SpaceAccount.vue') },
+      { path: 'appearance', name: 'space-appearance', component: () => import('./space/SpaceAppearance.vue') },
       { path: 'system', name: 'space-system', component: () => import('./space/SpaceSystem.vue') },
     ],
   },
