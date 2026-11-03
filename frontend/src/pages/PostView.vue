@@ -14,6 +14,11 @@ onMounted(async () => {
     post.value = await res.json()
     state.value = 'ok'
     document.title = `${post.value.title} — Y's Blog`
+    /* 阅读数上报（独立 POST，失败不影响阅读） */
+    fetch(`/api/articles/${route.params.slug}/view`, { method: 'POST' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && d.views != null) post.value.views = d.views })
+      .catch(() => {})
   } catch { state.value = 'error' }
 })
 </script>
