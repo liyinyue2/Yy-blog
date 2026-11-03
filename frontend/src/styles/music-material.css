@@ -1,0 +1,249 @@
+/* ============================================================
+   音乐中心 · 材质层（v4.2.1）
+   只改观感：底色渐变 → 顶部反射 → 边缘高光 → 内部明暗 → 外投影。
+   不改变任何尺寸、位置与布局。
+   ============================================================ */
+
+/* ---- 主面板：一块有厚度的磨砂玻璃 ---- */
+.music-shell {
+  position: relative;
+  isolation: isolate;
+  background:
+    /* 中性冷灰底：白底会让面板比页面更亮、发糊；冷灰能让它成为一块独立材质 */
+    linear-gradient(180deg,
+      rgba(236, 240, 248, .22) 0%,
+      rgba(214, 222, 236, .14) 40%,
+      rgba(218, 225, 238, .15) 74%,
+      rgba(222, 228, 240, .16) 100%);
+  -webkit-backdrop-filter: blur(40px) saturate(145%);
+  backdrop-filter: blur(40px) saturate(145%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .40),
+    inset 0 1px 0 rgba(255, 255, 255, .92),
+    inset 1px 0 0 rgba(255, 255, 255, .26),
+    inset -1px 0 0 rgba(255, 255, 255, .20),
+    inset 0 -1px 0 rgba(255, 255, 255, .22),
+    inset 0 54px 70px -44px rgba(255, 255, 255, .60),   /* 顶部内层柔光（厚度） */
+    inset 0 -56px 80px -58px rgba(16, 24, 40, .12),     /* 底部内层暗角（压住下缘） */
+    0 0 0 1px rgba(16, 24, 40, .055),
+    0 1px 2px rgba(16, 24, 40, .05),
+    0 12px 28px -18px rgba(16, 24, 40, .26),
+    0 40px 90px -40px rgba(16, 24, 40, .34);
+}
+
+/* 顶部两处柔光反射：左上更强、右上更弱，模拟环境光 */
+.music-shell::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(64% 30% at 22% -6%, rgba(255, 255, 255, .42), rgba(255, 255, 255, 0) 68%),
+    radial-gradient(46% 24% at 86% -4%, rgba(255, 255, 255, .20), rgba(255, 255, 255, 0) 66%),
+    radial-gradient(60% 60% at 96% 8%, rgba(122, 170, 255, .10), rgba(122, 170, 255, 0) 68%),
+    radial-gradient(62% 62% at 2% 96%, rgba(255, 198, 120, .09), rgba(255, 198, 120, 0) 70%);
+}
+
+/* 内部明暗：下缘轻微压暗（厚度感）+ 底部一线反射 */
+.music-shell::after {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(20, 26, 38, 0) 58%, rgba(20, 26, 38, .045) 100%),
+    radial-gradient(64% 30% at 50% 112%, rgba(255, 255, 255, .18), rgba(255, 255, 255, 0) 72%);
+}
+
+.music-shell > * { position: relative; z-index: 1; }
+
+/* ---- 侧栏：低一档的玻璃 + 右侧「暗线 + 高光」双层分隔 ---- */
+.ms-side {
+  background: linear-gradient(180deg,
+    rgba(228, 234, 245, .16) 0%,
+    rgba(214, 222, 236, .06) 55%,
+    rgba(220, 227, 240, .10) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+  backdrop-filter: blur(22px) saturate(135%);
+  box-shadow:
+    inset -1px 0 0 rgba(16, 24, 40, .09),
+    inset -2px 0 0 rgba(255, 255, 255, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .30);
+}
+
+/* ---- 侧栏条目：悬停柔光 / 选中是独立浮起的小玻璃 ---- */
+.ms-item:hover, .ms-pl:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .48), rgba(255, 255, 255, .24));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45);
+}
+.ms-item.is-on, .ms-pl.is-on {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .74));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .95),
+    inset 0 1px 0 #fff,
+    0 1px 2px rgba(16, 24, 40, .06),
+    0 8px 18px -10px rgba(16, 24, 40, .22);
+}
+
+/* ---- 曲目表头 / 行 ---- */
+.mt-head {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .26));
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: inset 0 -1px 0 rgba(16, 24, 40, .07);
+}
+.mt-row:hover { background: linear-gradient(180deg, rgba(255, 255, 255, .40), rgba(255, 255, 255, .20)); }
+.mt-row.is-on {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .70), rgba(255, 255, 255, .42));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .85),
+    0 1px 2px rgba(16, 24, 40, .05),
+    0 8px 20px -12px rgba(16, 24, 40, .22);
+}
+
+/* ---- 封面：保持原色，只加一层很薄的高光 ---- */
+.mt-cover, .pl-card .cover, .pd-cover, .mp-now .cover { position: relative; overflow: hidden; }
+.mt-cover::after, .pl-card .cover::after, .pd-cover::after, .mp-now .cover::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 48%);
+}
+
+/* ---- 歌单卡片：轻玻璃，悬停才有明显高光 ---- */
+.pl-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .20), rgba(255, 255, 255, .05));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .38),
+    inset 0 1px 0 rgba(255, 255, 255, .52);
+}
+.pl-card:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .52), rgba(255, 255, 255, .24));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .62),
+    inset 0 1px 0 #fff,
+    0 10px 26px -14px rgba(16, 24, 40, .25);
+}
+
+/* ---- 底部播放器：更通透、更强模糊，浮在页面之上 ---- */
+.mp-bar {
+  background:
+    linear-gradient(180deg,
+      rgba(240, 244, 250, .40) 0%,
+      rgba(216, 224, 237, .24) 52%,
+      rgba(222, 228, 240, .30) 100%);
+  -webkit-backdrop-filter: blur(36px) saturate(150%);
+  backdrop-filter: blur(36px) saturate(150%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .45),
+    inset 0 1px 0 rgba(255, 255, 255, .95),
+    inset 0 -1px 0 rgba(255, 255, 255, .24),
+    0 0 0 1px rgba(16, 24, 40, .06),
+    0 2px 6px rgba(16, 24, 40, .06),
+    0 10px 24px -10px rgba(16, 24, 40, .26),
+    0 30px 60px -24px rgba(16, 24, 40, .38);
+}
+.mp-bar::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(90% 120% at 12% -40%, rgba(255, 255, 255, .38), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0) 42%);
+}
+.mp-bar > :not(.mp-queue) { position: relative; z-index: 1; }
+
+/* ---- 播放按钮：细腻玻璃，悬停提亮 ---- */
+.mp-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .16));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .50), inset 0 1px 0 rgba(255, 255, 255, .70);
+}
+.mp-btn:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .64), rgba(255, 255, 255, .36));
+  color: var(--ink);
+  transform: none;
+}
+.mp-btn.play {
+  background: linear-gradient(180deg, #fff, rgba(255, 255, 255, .82));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .95),
+    inset 0 1px 0 #fff,
+    0 4px 10px -4px rgba(16, 24, 40, .28),
+    0 12px 24px -12px rgba(16, 24, 40, .30);
+}
+
+/* ---- 队列弹层：与播放器同一材质语言 ---- */
+.mp-queue {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .66), rgba(255, 255, 255, .44));
+  -webkit-backdrop-filter: blur(34px) saturate(190%);
+  backdrop-filter: blur(34px) saturate(190%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .55),
+    inset 0 1px 0 #fff,
+    0 12px 30px -14px rgba(16, 24, 40, .30),
+    0 34px 60px -24px rgba(16, 24, 40, .32);
+}
+
+/* ---- 深色主题：同一套层次换成深色玻璃，避免白糊 ---- */
+[data-theme="dark"] .music-shell {
+  background: linear-gradient(180deg, rgba(72, 72, 78, .58), rgba(44, 44, 48, .46) 55%, rgba(52, 52, 56, .52));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    0 18px 40px -22px rgba(0, 0, 0, .55),
+    0 48px 96px -36px rgba(0, 0, 0, .55);
+}
+[data-theme="dark"] .music-shell::before {
+  background:
+    radial-gradient(120% 58% at 16% -12%, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 62%),
+    radial-gradient(90% 46% at 84% -6%, rgba(255, 255, 255, .08), rgba(255, 255, 255, 0) 58%);
+}
+[data-theme="dark"] .music-shell::after {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, .18) 100%);
+}
+[data-theme="dark"] .ms-side {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02));
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .35), inset -2px 0 0 rgba(255, 255, 255, .08);
+}
+[data-theme="dark"] .ms-item.is-on,
+[data-theme="dark"] .ms-pl.is-on,
+[data-theme="dark"] .mt-row.is-on {
+  background: linear-gradient(180deg, rgba(120, 120, 128, .72), rgba(96, 96, 104, .58));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), 0 8px 18px -10px rgba(0, 0, 0, .5);
+}
+[data-theme="dark"] .mp-bar {
+  background: linear-gradient(180deg, rgba(86, 86, 92, .72), rgba(58, 58, 62, .58));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    0 12px 30px -12px rgba(0, 0, 0, .6);
+}
+[data-theme="dark"] .mp-queue {
+  background: linear-gradient(180deg, rgba(70, 70, 76, .86), rgba(50, 50, 54, .78));
+}
+[data-theme="dark"] .mt-head {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04));
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .30);
+}
+[data-theme="dark"] .pl-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .03));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .10);
+}
+[data-theme="dark"] .pl-card:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .06));
+}
+
+/* 深色下的播放按钮：不要一块纯白圆片 */
+[data-theme="dark"] .mp-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .06));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+[data-theme="dark"] .mp-btn:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .12));
+}
+[data-theme="dark"] .mp-btn.play {
+  background: linear-gradient(180deg, rgba(240, 240, 245, .92), rgba(200, 200, 208, .82));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .8),
+    0 6px 18px -6px rgba(0, 0, 0, .6);
+  color: #14141a;
+}
+[data-theme="dark"] .mp-queue li button:hover { background: rgba(255, 255, 255, .10); }
